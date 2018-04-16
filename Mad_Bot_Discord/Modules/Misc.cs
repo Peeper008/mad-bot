@@ -15,7 +15,7 @@ namespace Mad_Bot_Discord.Modules
         {
             var embed = new EmbedBuilder();
 
-            embed.WithTitle("Message by " + Context.User.Username)
+            embed.WithTitle(Utilities.GetFormattedAlert("ECHO_&NAME", Context.User.Username))
                 .WithDescription(message)
                 .WithColor(0, 255, 0);
 
@@ -31,7 +31,7 @@ namespace Mad_Bot_Discord.Modules
             string selection = options[r.Next(0, options.Length)];
 
             var embed = new EmbedBuilder();
-            embed.WithTitle("Choice for " + Context.User.Username)
+            embed.WithTitle(Utilities.GetFormattedAlert("PICK_&NAME", Context.User.Username))
                 .WithDescription(selection)
                 .WithColor(255, 255, 0);
 

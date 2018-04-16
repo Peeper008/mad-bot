@@ -1,3 +1,5 @@
 {
-	"TEST":"Hello World!"
+	"TEST": "Hello World!",
+	"ECHO_&NAME": "Message by {0}",
+	"PICK_&NAME": "Choice for {0}"
 }
