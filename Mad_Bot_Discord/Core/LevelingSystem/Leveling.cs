@@ -15,8 +15,6 @@ namespace Mad_Bot_Discord.Core.LevelingSystem
             var userAccount = UserAccounts.UserAccounts.GetAccount(user);
             uint oldLevel = userAccount.LevelNumber;
 
-            
-
             // if the user has a timeout, ignore them
             if ((DateTime.UtcNow - userAccount.LastMessage.ToUniversalTime()) < TimeSpan.FromMinutes(1))
             {

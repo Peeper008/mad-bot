@@ -26,7 +26,6 @@ namespace Mad_Bot_Discord
                 bot = new BotConfig();
                 string json = JsonConvert.SerializeObject(bot, Formatting.Indented);
                 File.WriteAllText(configFolder + "/" + configFile, json);
-                Console.WriteLine("What");
             }
             else
             {

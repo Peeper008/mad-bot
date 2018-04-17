@@ -18,7 +18,12 @@ namespace Mad_Bot_Discord
 
         public async Task StartAsync()
         {
-            if (Config.bot.token == "" || Config.bot.token == null) return;
+            if (Config.bot.token == "" || Config.bot.token == null)
+            {
+                Console.WriteLine("Please enter values in the config file.");
+                Console.ReadLine();
+            }
+
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Verbose
@@ -37,7 +42,7 @@ namespace Mad_Bot_Discord
 
         private async Task ClientReady()
         {
-            await _client.SetGameAsync(Config.bot.game);
+            await _client.SetGameAsync(String.Format(Config.bot.game, Config.bot.cmdPrefix));
         }
 
         private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channel, SocketReaction reaction)
