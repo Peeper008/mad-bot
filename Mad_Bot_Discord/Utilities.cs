@@ -5,11 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.IO;
+using Discord;
 
 namespace Mad_Bot_Discord
 {
     class Utilities
     {
+        private static Random r = new Random();
+
         private static Dictionary<string, string> alerts;
 
         static Utilities()
@@ -38,6 +41,11 @@ namespace Mad_Bot_Discord
         public static string GetFormattedAlert(string key, object parameter)
         {
             return GetFormattedAlert(key, new object[] { parameter });
+        }
+
+        public static Color GetColor()
+        {
+            return new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256));
         }
     }
 }

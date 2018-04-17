@@ -12,6 +12,32 @@ namespace Mad_Bot_Discord.Modules
 {
     public class Management : ModuleBase<SocketCommandContext>
     {
+
+        [Command("Mute")]
+        [RequireUserPermission(GuildPermission.KickMembers)]
+        [RequireBotPermission(GuildPermission.ManageMessages)]
+        public async Task MuteUser (IGuildUser user)
+        {
+            var userAccount = UserAccounts.GetAccount((SocketUser)user);
+
+            userAccount.IsMuted = true;
+
+            var embed = new EmbedBuilder();
+
+            embed.WithTitle("Mute by " + Context.User.Username)
+                .WithDescription(user.Mention + " is now muted.")
+                .WithFooter(x =>
+                {
+                    x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
+                    x.IconUrl = Context.User.GetAvatarUrl();
+                })
+                .WithThumbnailUrl(user.GetAvatarUrl())
+                .WithColor(Utilities.GetColor());
+
+            await Context.Channel.SendMessageAsync("", embed: embed);
+                
+        }
+
         [Command("Warn")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.BanMembers)]
@@ -24,7 +50,19 @@ namespace Mad_Bot_Discord.Modules
             // punishment check
             if (userAccount.NumberOfWarnings == 3)
             {
-                await Context.Channel.SendMessageAsync(Context.User.Username + " has reached 3 warnings and has been kicked.");
+                var embed = new EmbedBuilder();
+
+                embed.WithTitle("Warn by " + Context.User.Username)
+                    .WithDescription(user.Mention + " has reached 3 warnings and has been kicked.")
+                    .WithFooter(x =>
+                    {
+                        x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
+                        x.IconUrl = Context.User.GetAvatarUrl();
+                    })
+                    .WithThumbnailUrl(user.GetAvatarUrl())
+                    .WithColor(Utilities.GetColor());
+
+                await Context.Channel.SendMessageAsync("", embed: embed);
                 await user.KickAsync("Reached 3 warnings.");
                 userAccount.PunishmentsByWarnings++;
 
@@ -33,7 +71,20 @@ namespace Mad_Bot_Discord.Modules
             }
             else if (userAccount.NumberOfWarnings == 6)
             {
-                await Context.Channel.SendMessageAsync(Context.User.Username + " has reached 6 warnings and has been banned.");
+                var embed = new EmbedBuilder();
+
+                embed.WithTitle("Warn by " + Context.User.Username)
+                    .WithDescription(user.Mention + " has reached 6 warnings and has been banned.")
+                    .WithFooter(x =>
+                    {
+                        x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
+                    x.IconUrl = Context.User.GetAvatarUrl();
+                    })
+                    .WithThumbnailUrl(user.GetAvatarUrl())
+                    .WithColor(Utilities.GetColor());
+
+                await Context.Channel.SendMessageAsync("", embed: embed);
+
                 await user.Guild.AddBanAsync(user, 0, "Reached 6 warnings.");
                 userAccount.PunishmentsByWarnings++;
 
@@ -42,7 +93,20 @@ namespace Mad_Bot_Discord.Modules
             }
             else if (userAccount.NumberOfWarnings > 6)
             {
-                await Context.Channel.SendMessageAsync(Context.User.Username + " has reached 6+ warnings and has been banned.");
+                var embed = new EmbedBuilder();
+
+                embed.WithTitle("Warn by " + Context.User.Username)
+                    .WithDescription(user.Mention + " has reached 6+ warnings and has been banned.")
+                    .WithFooter(x =>
+                    {
+                        x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
+                        x.IconUrl = Context.User.GetAvatarUrl();
+                    })
+                    .WithThumbnailUrl(user.GetAvatarUrl())
+                    .WithColor(Utilities.GetColor());
+
+                await Context.Channel.SendMessageAsync("", embed: embed);
+
                 await user.Guild.AddBanAsync(user, 0, "Passed 6 warnings.");
                 userAccount.PunishmentsByWarnings++;
 
@@ -59,6 +123,20 @@ namespace Mad_Bot_Discord.Modules
         public async Task KickUser(IGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             await user.KickAsync(reason);
+
+            var embed = new EmbedBuilder();
+
+            embed.WithTitle("Kick by " + Context.User.Username)
+                .WithDescription($"{user.Mention} has been kicked.")
+                .WithFooter(x =>
+                {
+                    x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
+                    x.IconUrl = Context.User.GetAvatarUrl();
+                })
+                .WithThumbnailUrl(user.GetAvatarUrl())
+                .WithColor(Utilities.GetColor());
+
+            await Context.Channel.SendMessageAsync("", embed: embed);
         }
 
         [Command("Ban")]
@@ -67,6 +145,20 @@ namespace Mad_Bot_Discord.Modules
         public async Task BanUser(IGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             await user.Guild.AddBanAsync(user, 0, reason);
+
+            var embed = new EmbedBuilder();
+
+            embed.WithTitle("Kick by " + Context.User.Username)
+                .WithDescription($"{user.Mention} has been banned.")
+                .WithFooter(x =>
+                {
+                    x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
+                    x.IconUrl = Context.User.GetAvatarUrl();
+                })
+                .WithThumbnailUrl(user.GetAvatarUrl())
+                .WithColor(Utilities.GetColor());
+
+            await Context.Channel.SendMessageAsync("", embed: embed);
         }
     }
 }
