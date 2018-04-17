@@ -42,10 +42,24 @@ namespace Mad_Bot_Discord.Modules
         [Command("secret")]
         public async Task RevealSecret([Remainder] string arg = "")
         {
-            if (!UserIsSecretOwner((SocketGuildUser) Context.User)) return;
+            EmbedBuilder embed = new EmbedBuilder();
+
+            if (!UserIsSecretOwner((SocketGuildUser) Context.User))
+            {
+                embed.WithTitle("Permission Denied")
+                    .WithDescription(":x: You need the SecretOwner role to do that. " + Context.User.Mention)
+                    .WithColor(0, 255, 255);
+
+                await Context.Channel.SendMessageAsync("", false, embed);
+                return;
+            }
+
+            embed.WithTitle("Secret Code")
+                .WithDescription(Utilities.GetAlert("SECRET"))
+                .WithColor(0, 255, 255);
 
             var dmChannel = await Context.User.GetOrCreateDMChannelAsync();
-            await dmChannel.SendMessageAsync(Utilities.GetAlert("SECRET"));
+            await dmChannel.SendMessageAsync("", false, embed);
         }
 
         private bool UserIsSecretOwner(SocketGuildUser user)
@@ -60,6 +74,12 @@ namespace Mad_Bot_Discord.Modules
             if (roleID == 0) return false;
             var targetRole = user.Guild.GetRole(roleID);
             return user.Roles.Contains(targetRole);
+        }
+
+        [Command("data")]
+        public async Task GetData()
+        {
+            await Context.Channel.SendMessageAsync("Data Has " + DataStorage.GetPairsCount() + " pairs.");
         }
     }
 }
