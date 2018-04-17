@@ -48,7 +48,7 @@ namespace Mad_Bot_Discord.Modules
 
             var embed = new EmbedBuilder();
             embed.WithTitle($"8Ball for {un}")
-                .WithDescription($"You said {Context.Message.Content}...")
+                .WithDescription($"You said {question}...")
                 .AddInlineField("**Answer:**", selection)
                 .WithColor(Utilities.GetColor())
                 .WithFooter(x =>
