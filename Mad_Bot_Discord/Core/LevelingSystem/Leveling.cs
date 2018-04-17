@@ -20,7 +20,6 @@ namespace Mad_Bot_Discord.Core.LevelingSystem
             // if the user has a timeout, ignore them
             if ((DateTime.UtcNow - userAccount.LastMessage.ToUniversalTime()) < TimeSpan.FromMinutes(1))
             {
-                Console.WriteLine("Too Early");
                 return;
             }
 

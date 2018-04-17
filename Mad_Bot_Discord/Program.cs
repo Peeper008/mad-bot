@@ -24,6 +24,7 @@ namespace Mad_Bot_Discord
                 LogLevel = LogSeverity.Verbose
             });
 
+            _client.Ready += ClientReady;
             _client.Log += Log;
             _client.ReactionAdded += OnReactionAdded;
             await _client.LoginAsync(TokenType.Bot, Config.bot.token);
@@ -32,6 +33,11 @@ namespace Mad_Bot_Discord
             Global.Client = _client;
             await _handler.InitializeAsync(_client);
             await Task.Delay(-1);
+        }
+
+        private async Task ClientReady()
+        {
+            await _client.SetGameAsync(Config.bot.game);
         }
 
         private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channel, SocketReaction reaction)

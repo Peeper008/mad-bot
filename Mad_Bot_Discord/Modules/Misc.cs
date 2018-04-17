@@ -13,6 +13,12 @@ namespace Mad_Bot_Discord.Modules
 {
     public class Misc : ModuleBase<SocketCommandContext>
     {
+        [Command("Help")]
+        public async Task Help()
+        {
+            await Context.Channel.SendMessageAsync("https://github.com/Peeper008/mad-bot/wiki");
+        }
+
         [Command("WhatLevelIs")]
         public async Task WhatLevelIs(uint xp)
         {
@@ -61,7 +67,7 @@ namespace Mad_Bot_Discord.Modules
             
         }
 
-        [Command("pick")]
+        [Command("pick2")]
         public async Task Pick([Remainder] string message)
         {
             string[] options = message.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
