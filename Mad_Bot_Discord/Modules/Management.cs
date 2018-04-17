@@ -56,7 +56,7 @@ namespace Mad_Bot_Discord.Modules
         [Command("Kick")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.KickMembers)]
-        public async Task KickUser(IGuildUser user, string reason = "No reason provided.")
+        public async Task KickUser(IGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             await user.KickAsync(reason);
         }
@@ -64,7 +64,7 @@ namespace Mad_Bot_Discord.Modules
         [Command("Ban")]
         [RequireUserPermission(GuildPermission.BanMembers)]
         [RequireBotPermission(GuildPermission.BanMembers)]
-        public async Task BanUser(IGuildUser user, string reason = "No reason provided.")
+        public async Task BanUser(IGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             await user.Guild.AddBanAsync(user, 0, reason);
         }
