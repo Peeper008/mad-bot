@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -117,5 +118,44 @@ namespace Mad_Bot_Discord.Modules
             
         }
 
+        [Command("Ship")]
+        public async Task Ship(string memb1 = "", string memb2 = "")
+        {
+            await Context.Guild.DownloadUsersAsync();
+
+            Console.WriteLine(Context.Guild.Users.FirstOrDefault().Username);
+
+            SocketGuildUser target1 = null;
+            SocketGuildUser target2 = null;
+
+            SocketUser mentionedUser1 = null;
+            SocketUser mentionedUser2 = null;
+
+            mentionedUser1 = Context.Message.MentionedUsers.ElementAtOrDefault(0);
+            mentionedUser2 = Context.Message.MentionedUsers.ElementAtOrDefault(1);
+
+            target1 = (SocketGuildUser) mentionedUser1 ?? null;
+            target2 = (SocketGuildUser) mentionedUser2 ?? null;
+            
+           if (target1 == null )
+            {
+                SocketGuildUser m = Context.Guild.Users.ElementAt(r.Next(0, Context.Guild.MemberCount));
+                target1 = m;
+            }
+
+           if (target2 == null)
+            {
+                SocketGuildUser m = Context.Guild.Users.ElementAt(r.Next(0, Context.Guild.MemberCount));
+                target2 = m;
+            }
+
+            string un1 = target1.Username;
+            string un2 = target2.Username;
+
+            string newName = un1.Substring(0, (un1.Length / 2) + r.Next(-1, 2)) + un2.Substring((un2.Length / 2) + r.Next(-1, 2));
+
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"Ship for {Context.User.Username}",
+                $"You shipped `{target1.Username}` and `{target2.Username}` together!", "**The Result:**", $"Their new ship name is... `{newName}`", Context));
+        }
     }
 }
