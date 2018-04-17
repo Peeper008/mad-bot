@@ -21,18 +21,15 @@ namespace Mad_Bot_Discord.Modules
             string[] options = msg.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
             string selection = options[r.Next(0, options.Length)];
 
+            string allOptions = "";
+
+            foreach (string o in options)
+                allOptions = allOptions + o + " ";
+
             var embed = new EmbedBuilder();
 
-            embed.WithTitle("Choice for " + Context.User.Username)
-                .WithDescription("I choose... " + selection + "!")
-                .WithColor(Utilities.GetColor())
-                .WithFooter(x =>
-                {
-                    x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
-                    x.IconUrl = Context.User.GetAvatarUrl();
-                });
-
-            await Context.Channel.SendMessageAsync("", embed: embed);
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Choice for " + Context.User.Username,
+                $"Your choices were: `{allOptions}`", "**My Choice:**", $"I choose... `{selection}`!", Context));
 
         }
 
@@ -46,18 +43,8 @@ namespace Mad_Bot_Discord.Modules
             string selection = answers[r.Next(0, answers.Count)];
             string un = Context.User.Username;
 
-            var embed = new EmbedBuilder();
-            embed.WithTitle($"8Ball for {un}")
-                .WithDescription($"You said {question}...")
-                .AddInlineField("**Answer:**", selection)
-                .WithColor(Utilities.GetColor())
-                .WithFooter(x =>
-                {
-                    x.IconUrl = Context.User.GetAvatarUrl();
-                    x.Text = un + Context.User.Discriminator + " at " + Context.Message.Timestamp;
-                });
-
-            await Context.Channel.SendMessageAsync("", embed: embed);
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"8-Ball for {un}", $"You said: `{question}`", 
+                "**Answer:**", selection, Context));
         }
 
         [Command("Roll")]
@@ -67,35 +54,16 @@ namespace Mad_Bot_Discord.Modules
 
             if (!int.TryParse(ns[0], out int n1))
             {
-                var embed2 = new EmbedBuilder();
-                embed2.WithTitle("Failed Roll")
-                    .WithColor(Utilities.GetColor())
-                    .WithFooter(x =>
-                    {
-                        x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
-                        x.IconUrl = Context.User.GetAvatarUrl();
-                    })
-                    .WithDescription($"Failed to parse {ns[0]}. Roll only supports integers, you can separate them using a space or the '|' key. " +
-                    $"The max integer allowed is 2147483646.");
+                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Failed Roll", $"Failed to parse `{ns[0]}`. " +
+                    $"Roll only supports integers, you can separate them using a space or the '|' key. The max integer allowed is 2147483646.", Context));
 
-                await Context.Channel.SendMessageAsync("", embed: embed2);
                 return;
             }
             if (!int.TryParse(ns[1], out int n2))
             {
-                var embed2 = new EmbedBuilder();
+                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Failed Roll", $"Failed to parse `{ns[1]}`. " +
+                    $"Roll only supports integers, you can separate them using a space or the '|' key. The max integer allowed is 2147483646.", Context));
 
-                embed2.WithTitle("Failed Roll")
-                    .WithColor(Utilities.GetColor())
-                    .WithFooter(x =>
-                    {
-                        x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
-                        x.IconUrl = Context.User.GetAvatarUrl();
-                    })
-                    .WithDescription($"Failed to parse {ns[1]}. Roll only supports integers, you can separate them using a space or the '|' key. " +
-                    $"The max integer allowed is 2147483646.");
-
-                await Context.Channel.SendMessageAsync("", embed: embed2);
                 return;
             }
 
@@ -122,38 +90,31 @@ namespace Mad_Bot_Discord.Modules
             try
             {
                 selection = r.Next(n1, n2);
-                
+
             }
             catch (ArgumentOutOfRangeException)
             {
-                var embed3 = new EmbedBuilder();
-                embed3.WithTitle("Failed Roll")
-                    .WithColor(Utilities.GetColor())
-                    .WithDescription("The max number must be larger than the min number.")
-                    .WithFooter(x =>
-                    {
-                        x.Text = Context.User.Username + "#" + Context.User.Discriminator + " at " + Context.Message.Timestamp;
-                        x.IconUrl = Context.User.GetAvatarUrl();
-                    });
-
-                await Context.Channel.SendMessageAsync("", embed: embed3);
+                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
+                    "Failed Roll", "The max number must be larger than the min number.", Context));
 
                 return;
             }
+
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
+                "Roll for " + Context.User.Username, "Your two numbers were... `" + ns[0] + "` and `" + ns[1] + "`", "**New Number:**", 
+                "`" + selection.ToString() + "`", Context));
+        }
+
+        [Command("Coinflip")]
+        public async Task Coinflip([Remainder] string throwaway = "")
+        {
+            int n = r.Next(0, 2);
+
+            string selection = (n == 0) ? "Heads!" : "Tails!";
+
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
+                "Coinflip for " + Context.User.Username, "I choose... " + "`" + selection + "`", Context));
             
-
-            var embed = new EmbedBuilder();
-            embed.WithTitle("Roll for " + Context.User.Username)
-                .WithColor(Utilities.GetColor())
-                .WithDescription("Your two numbers were... " + ns[0] + " and " + ns[1])
-                .AddInlineField("**New Number:**", selection)
-                .WithFooter(x =>
-                {
-                    x.IconUrl = Context.User.GetAvatarUrl();
-                    x.Text = Context.User.Username + "#" + Context.User.Discriminator + " at " + Context.Message.Timestamp;
-                });
-
-            await Context.Channel.SendMessageAsync("", embed: embed);
         }
 
     }
