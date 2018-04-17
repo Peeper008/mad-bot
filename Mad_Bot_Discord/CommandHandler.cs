@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
 using Mad_Bot_Discord.Core.LevelingSystem;
+using Mad_Bot_Discord.Core.UserAccounts;
 
 namespace Mad_Bot_Discord
 {
@@ -29,6 +30,14 @@ namespace Mad_Bot_Discord
             if (msg == null) return;
             var context = new SocketCommandContext(_client, msg);
             if (context.User.IsBot) return;
+
+            // Mute Check
+            var userAccount = UserAccounts.GetAccount(context.User);
+            if (userAccount.IsMuted)
+            {
+                await context.Message.DeleteAsync();
+                return;
+            }
 
             // Leveling Up
             Leveling.UserSentMessage((SocketGuildUser)context.User, (SocketTextChannel) context.Channel);

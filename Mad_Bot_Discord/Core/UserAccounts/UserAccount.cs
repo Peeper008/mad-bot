@@ -26,5 +26,11 @@ namespace Mad_Bot_Discord.Core.UserAccounts
 
             }
         }
+
+        public bool IsMuted { get; set; }
+
+        public uint NumberOfWarnings { get; set; }
+
+        public uint PunishmentsByWarnings { get; set; }
     }
 }
