@@ -1,6 +1,8 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
+using Mad_Bot_Discord.Core.UserAccounts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +13,41 @@ namespace Mad_Bot_Discord.Modules
 {
     public class Misc : ModuleBase<SocketCommandContext>
     {
+        [Command("WhatLevelIs")]
+        public async Task WhatLevelIs(uint xp)
+        {
+            uint level = (uint)Math.Sqrt(xp / 50);
+            await Context.Channel.SendMessageAsync("The level is " + level);
+        }
+
+        [Command("react")]
+        public async Task HandleReactionMessage()
+        {
+            RestUserMessage msg = await Context.Channel.SendMessageAsync("React to me!");
+            Global.MessageIdToTrack = msg.Id;
+        }
+
+        [Command("myStats")]
+        public async Task MyStats([Remainder] string arg = "")
+        {
+            SocketUser target = null;
+            var mentionedUser = Context.Message.MentionedUsers.FirstOrDefault();
+
+            target = mentionedUser ?? Context.User;
+
+            var account = UserAccounts.GetAccount(target);
+            await Context.Channel.SendMessageAsync($"{target.Username} has {account.XP} XP");
+        }
+
+        [Command("addXP"), RequireUserPermission(GuildPermission.Administrator)]
+        public async Task AddXP(uint xp)
+        {
+            var account = UserAccounts.GetAccount(Context.User);
+            account.XP += xp;
+            UserAccounts.SaveAccounts();
+            await Context.Channel.SendMessageAsync($"You gained {xp} XP.");
+        }
+
         [Command("echo")]
         public async Task Echo([Remainder] string message)
         {
@@ -21,6 +58,7 @@ namespace Mad_Bot_Discord.Modules
                 .WithColor(0, 255, 0);
 
             await Context.Channel.SendMessageAsync("", false, embed);
+            
         }
 
         [Command("pick")]

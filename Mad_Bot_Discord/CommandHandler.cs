@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
+using Mad_Bot_Discord.Core.LevelingSystem;
 
 namespace Mad_Bot_Discord
 {
@@ -27,6 +28,11 @@ namespace Mad_Bot_Discord
             var msg = s as SocketUserMessage;
             if (msg == null) return;
             var context = new SocketCommandContext(_client, msg);
+            if (context.User.IsBot) return;
+
+            // Leveling Up
+            Leveling.UserSentMessage((SocketGuildUser)context.User, (SocketTextChannel) context.Channel);
+            
             int argPos = 0;
             if (msg.HasStringPrefix(Config.bot.cmdPrefix, ref argPos)
                 || msg.HasMentionPrefix(_client.CurrentUser, ref argPos))
