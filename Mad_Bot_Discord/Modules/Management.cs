@@ -24,7 +24,7 @@ namespace Mad_Bot_Discord.Modules
 
             var embed = new EmbedBuilder();
 
-            embed.WithTitle("Mute by " + Context.User.Username)
+            embed.WithTitle("Muted by " + Context.User.Username)
                 .WithDescription(user.Mention + " is now muted.")
                 .WithFooter(x =>
                 {
@@ -36,6 +36,30 @@ namespace Mad_Bot_Discord.Modules
 
             await Context.Channel.SendMessageAsync("", embed: embed);
                 
+        }
+
+        [Command("Unmute")]
+        [RequireUserPermission(GuildPermission.KickMembers)]
+        [RequireBotPermission(GuildPermission.ManageMessages)]
+        public async Task UnmuteUser (IGuildUser user)
+        {
+            var userAccount = UserAccounts.GetAccount((SocketUser)user);
+
+            userAccount.IsMuted = false;
+
+            var embed = new EmbedBuilder();
+
+            embed.WithTitle("Unmuted by " + Context.User.Username)
+                .WithDescription(user.Mention + " is now unmuted.")
+                .WithFooter(x =>
+                {
+                    x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
+                    x.IconUrl = Context.User.GetAvatarUrl();
+                })
+                .WithThumbnailUrl(user.GetAvatarUrl())
+                .WithColor(Utilities.GetColor());
+
+            await Context.Channel.SendMessageAsync("", embed: embed);
         }
 
         [Command("Warn")]
@@ -50,9 +74,9 @@ namespace Mad_Bot_Discord.Modules
             // punishment check
             if (userAccount.NumberOfWarnings == 3)
             {
-                var embed = new EmbedBuilder();
+                var embed4 = new EmbedBuilder();
 
-                embed.WithTitle("Warn by " + Context.User.Username)
+                embed4.WithTitle("Warning by " + Context.User.Username)
                     .WithDescription(user.Mention + " has reached 3 warnings and has been kicked.")
                     .WithFooter(x =>
                     {
@@ -62,7 +86,7 @@ namespace Mad_Bot_Discord.Modules
                     .WithThumbnailUrl(user.GetAvatarUrl())
                     .WithColor(Utilities.GetColor());
 
-                await Context.Channel.SendMessageAsync("", embed: embed);
+                await Context.Channel.SendMessageAsync("", embed: embed4);
                 await user.KickAsync("Reached 3 warnings.");
                 userAccount.PunishmentsByWarnings++;
 
@@ -71,9 +95,9 @@ namespace Mad_Bot_Discord.Modules
             }
             else if (userAccount.NumberOfWarnings == 6)
             {
-                var embed = new EmbedBuilder();
+                var embed3 = new EmbedBuilder();
 
-                embed.WithTitle("Warn by " + Context.User.Username)
+                embed3.WithTitle("Warning by " + Context.User.Username)
                     .WithDescription(user.Mention + " has reached 6 warnings and has been banned.")
                     .WithFooter(x =>
                     {
@@ -83,7 +107,7 @@ namespace Mad_Bot_Discord.Modules
                     .WithThumbnailUrl(user.GetAvatarUrl())
                     .WithColor(Utilities.GetColor());
 
-                await Context.Channel.SendMessageAsync("", embed: embed);
+                await Context.Channel.SendMessageAsync("", embed: embed3);
 
                 await user.Guild.AddBanAsync(user, 0, "Reached 6 warnings.");
                 userAccount.PunishmentsByWarnings++;
@@ -93,9 +117,9 @@ namespace Mad_Bot_Discord.Modules
             }
             else if (userAccount.NumberOfWarnings > 6)
             {
-                var embed = new EmbedBuilder();
+                var embed2 = new EmbedBuilder();
 
-                embed.WithTitle("Warn by " + Context.User.Username)
+                embed2.WithTitle("Warning by " + Context.User.Username)
                     .WithDescription(user.Mention + " has reached 6+ warnings and has been banned.")
                     .WithFooter(x =>
                     {
@@ -105,7 +129,7 @@ namespace Mad_Bot_Discord.Modules
                     .WithThumbnailUrl(user.GetAvatarUrl())
                     .WithColor(Utilities.GetColor());
 
-                await Context.Channel.SendMessageAsync("", embed: embed);
+                await Context.Channel.SendMessageAsync("", embed: embed2);
 
                 await user.Guild.AddBanAsync(user, 0, "Passed 6 warnings.");
                 userAccount.PunishmentsByWarnings++;
@@ -114,7 +138,19 @@ namespace Mad_Bot_Discord.Modules
                 return;
             }
 
-            await Context.Channel.SendMessageAsync(Context.User.Username + " now has " + userAccount.NumberOfWarnings + " warnings.");
+            var embed = new EmbedBuilder();
+
+            embed.WithTitle("Warning by " + Context.User.Username)
+                .WithDescription(user.Mention + " now has " + userAccount.NumberOfWarnings + " warnings.")
+                .WithFooter(x =>
+                {
+                    x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
+                    x.IconUrl = Context.User.GetAvatarUrl();
+                })
+                .WithThumbnailUrl(user.GetAvatarUrl())
+                .WithColor(Utilities.GetColor());
+
+            await Context.Channel.SendMessageAsync("", embed: embed);
         }
 
         [Command("Kick")]
@@ -126,7 +162,7 @@ namespace Mad_Bot_Discord.Modules
 
             var embed = new EmbedBuilder();
 
-            embed.WithTitle("Kick by " + Context.User.Username)
+            embed.WithTitle("Kicked by " + Context.User.Username)
                 .WithDescription($"{user.Mention} has been kicked.")
                 .WithFooter(x =>
                 {
@@ -148,7 +184,7 @@ namespace Mad_Bot_Discord.Modules
 
             var embed = new EmbedBuilder();
 
-            embed.WithTitle("Kick by " + Context.User.Username)
+            embed.WithTitle("Banned by " + Context.User.Username)
                 .WithDescription($"{user.Mention} has been banned.")
                 .WithFooter(x =>
                 {
