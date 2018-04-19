@@ -196,5 +196,17 @@ namespace Mad_Bot_Discord.Modules
 
             await Context.Channel.SendMessageAsync("", embed: embed);
         }
+
+        [Command("ModXP")]
+        [RequireUserPermission(GuildPermission.KickMembers)]
+        public async Task ModXP(IGuildUser member, uint xp)
+        {
+            UserAccount target = UserAccounts.GetAccount((SocketUser) member);
+            target.XP = xp;
+            UserAccounts.SaveAccounts();
+
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("ModXP for " + Context.User.Username, $"{member.Username}'s XP is now {xp}!", Context));
+            
+        }
     }
 }
