@@ -21,8 +21,8 @@ namespace Mad_Bot_Discord.Core.UserAccounts
         {
             get
             {
-                //XP = LEVEL ^ 2 * 50
-                return (uint) Math.Sqrt(XP / 50);
+                //XP = LEVEL ^ 2
+                return (uint) Math.Sqrt(XP);
 
             }
         }

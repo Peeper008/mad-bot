@@ -27,7 +27,7 @@ namespace Mad_Bot_Discord.Core.LevelingSystem
             // name value for debug purposes
 
             userAccount.LastMessage = DateTime.Now;
-            userAccount.XP += 50;
+            userAccount.XP += 1;
             UserAccounts.UserAccounts.SaveAccounts();
             uint newLevel = userAccount.LevelNumber;
 

@@ -60,10 +60,10 @@ namespace Mad_Bot_Discord.Modules
 
             userAccounts.Sort(delegate (UserAccount x, UserAccount y)
             {
-                if (x.XP == 0 && y.XP == 0) return 0;
-                else if (x.XP == 0) return 1;
-                else if (y.XP == 0) return -1;
-                else return -1;
+                if (x.XP == y.XP) return 0;
+                else if (x.XP > y.XP) return -1;
+                else if (x.XP < y.XP) return 1;
+                else return 0;
             });
 
             EmbedBuilder embed = new EmbedBuilder();
@@ -79,23 +79,18 @@ namespace Mad_Bot_Discord.Modules
 
             for (int i = page*5-5; i < userAccounts.Count; i++)
             {
-                string finalText = "...";
-                if (i > page * 5 - 2)
-                    finalText = "-----------------------------------";
-
                 if (userAccounts[i].Name == Context.User.Username) userAccounts[i].Name = $"{userAccounts[i].Name} (You)";
-                embed.AddField($"#{i+1} - " + userAccounts[i].Name + ":", $"**XP:** {userAccounts[i].XP} \n**Level:** {userAccounts[i].LevelNumber} \n{finalText}");
+                embed.AddField($"#{i+1} - " + userAccounts[i].Name + ":", $"**XP:** {userAccounts[i].XP} \n**Level:** {userAccounts[i].LevelNumber} \n...");
 
-                if (i > page * 5 - 2) {
-
-                    UserAccount yourAcc = UserAccounts.GetAccount(Context.User);
-                    int yourPos = userAccounts.FindIndex(x => x.ID == yourAcc.ID);
-
-                    embed.AddField($"#{yourPos+1} - {userAccounts[yourPos].Name}:", $"**XP:** {userAccounts[yourPos].XP} \n**Level:** {userAccounts[i].LevelNumber} \n...");
-                    break;
-                }
-                
+                if (i > page * 5 - 2) break;
             }
+
+            UserAccount yourAcc = UserAccounts.GetAccount(Context.User);
+            int yourPos = userAccounts.FindIndex(x => x.ID == yourAcc.ID);
+
+            userAccounts[yourPos].Name = Context.User.Username + " (You)";
+
+            embed.AddField($"#{yourPos + 1} - {userAccounts[yourPos].Name}:", $"**XP:** {userAccounts[yourPos].XP} \n**Level:** {userAccounts[yourPos].LevelNumber} \n...");
 
             await Context.Channel.SendMessageAsync("", embed: embed);
         }

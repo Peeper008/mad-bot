@@ -22,7 +22,7 @@ namespace Mad_Bot_Discord.Modules
         [Command("WhatLevelIs")]
         public async Task WhatLevelIs(uint xp)
         {
-            uint level = (uint)Math.Sqrt(xp / 50);
+            uint level = (uint)Math.Sqrt(xp);
             await Context.Channel.SendMessageAsync("The level is " + level);
         }
 

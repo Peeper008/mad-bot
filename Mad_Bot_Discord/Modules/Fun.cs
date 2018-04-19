@@ -123,8 +123,6 @@ namespace Mad_Bot_Discord.Modules
         {
             await Context.Guild.DownloadUsersAsync();
 
-            Console.WriteLine(Context.Guild.Users.FirstOrDefault().Username);
-
             SocketGuildUser target1 = null;
             SocketGuildUser target2 = null;
 

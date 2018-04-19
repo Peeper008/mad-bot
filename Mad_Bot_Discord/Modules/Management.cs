@@ -1,10 +1,10 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Discord;
 using Mad_Bot_Discord.Core.UserAccounts;
 using Discord.WebSocket;
 
@@ -16,8 +16,12 @@ namespace Mad_Bot_Discord.Modules
         [Command("Mute")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.ManageMessages)]
-        public async Task MuteUser (IGuildUser user)
+        public async Task MuteUser(string memb1 = "")
         {
+            await Context.Guild.DownloadUsersAsync();
+
+            SocketGuildUser user = (SocketGuildUser)Context.Message.MentionedUsers.FirstOrDefault();
+
             var userAccount = UserAccounts.GetAccount((SocketUser)user);
 
             userAccount.IsMuted = true;
@@ -35,14 +39,18 @@ namespace Mad_Bot_Discord.Modules
                 .WithColor(Utilities.GetColor());
 
             await Context.Channel.SendMessageAsync("", embed: embed);
-                
+
         }
 
         [Command("Unmute")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.ManageMessages)]
-        public async Task UnmuteUser (IGuildUser user)
+        public async Task UnmuteUser(string memb1 = "")
         {
+            await Context.Guild.DownloadUsersAsync();
+
+            SocketGuildUser user = (SocketGuildUser) Context.Message.MentionedUsers.FirstOrDefault();
+
             var userAccount = UserAccounts.GetAccount((SocketUser)user);
 
             userAccount.IsMuted = false;
@@ -65,12 +73,18 @@ namespace Mad_Bot_Discord.Modules
         [Command("Warn")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.BanMembers)]
-        public async Task WarnUser (IGuildUser user)
+        public async Task WarnUser(string memb1 = "")
         {
+            await Context.Guild.DownloadUsersAsync();
+
+            SocketGuildUser user = (SocketGuildUser) Context.Message.MentionedUsers.FirstOrDefault();
+
+            Console.WriteLine("HELP");
+
             var userAccount = UserAccounts.GetAccount((SocketUser)user);
             userAccount.NumberOfWarnings++;
             UserAccounts.SaveAccounts();
-           
+
             // punishment check
             if (userAccount.NumberOfWarnings == 3)
             {
@@ -102,7 +116,7 @@ namespace Mad_Bot_Discord.Modules
                     .WithFooter(x =>
                     {
                         x.Text = $"{Context.User.Username}#{Context.User.Discriminator} at {Context.Message.Timestamp}";
-                    x.IconUrl = Context.User.GetAvatarUrl();
+                        x.IconUrl = Context.User.GetAvatarUrl();
                     })
                     .WithThumbnailUrl(user.GetAvatarUrl())
                     .WithColor(Utilities.GetColor());
@@ -156,8 +170,12 @@ namespace Mad_Bot_Discord.Modules
         [Command("Kick")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.KickMembers)]
-        public async Task KickUser(IGuildUser user, [Remainder] string reason = "No reason provided.")
+        public async Task KickUser(string memb1 = "", [Remainder] string reason = "No reason provided.")
         {
+            await Context.Guild.DownloadUsersAsync();
+
+            SocketGuildUser user = (SocketGuildUser)Context.Message.MentionedUsers.FirstOrDefault();
+
             await user.KickAsync(reason);
 
             var embed = new EmbedBuilder();
@@ -178,8 +196,12 @@ namespace Mad_Bot_Discord.Modules
         [Command("Ban")]
         [RequireUserPermission(GuildPermission.BanMembers)]
         [RequireBotPermission(GuildPermission.BanMembers)]
-        public async Task BanUser(IGuildUser user, [Remainder] string reason = "No reason provided.")
+        public async Task BanUser(string memb1 = "", [Remainder] string reason = "No reason provided.")
         {
+            await Context.Guild.DownloadUsersAsync();
+
+            SocketGuildUser user = (SocketGuildUser)Context.Message.MentionedUsers.FirstOrDefault();
+
             await user.Guild.AddBanAsync(user, 0, reason);
 
             var embed = new EmbedBuilder();
@@ -199,14 +221,18 @@ namespace Mad_Bot_Discord.Modules
 
         [Command("ModXP")]
         [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task ModXP(IGuildUser member, uint xp)
+        public async Task ModXP(string memb1, uint xp)
         {
-            UserAccount target = UserAccounts.GetAccount((SocketUser) member);
+            await Context.Guild.DownloadUsersAsync();
+
+            SocketGuildUser member = (SocketGuildUser)Context.Message.MentionedUsers.FirstOrDefault();
+
+            UserAccount target = UserAccounts.GetAccount((SocketUser)member);
             target.XP = xp;
             UserAccounts.SaveAccounts();
 
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("ModXP for " + Context.User.Username, $"{member.Username}'s XP is now {xp}!", Context));
-            
+
         }
     }
 }
