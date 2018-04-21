@@ -155,5 +155,94 @@ namespace Mad_Bot_Discord.Modules
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"Ship for {Context.User.Username}",
                 $"You shipped `{target1.Username}` and `{target2.Username}` together!", "**The Result:**", $"Their new ship name is... `{newName}`", Context));
         }
+
+        [Command("Colorme"), Alias("Colourme")]
+        [RequireBotPermission(GuildPermission.ManageRoles)]
+        public async Task Colorme(string hex)
+        {
+            bool colorFound = false;
+            IRole role = null;
+            IRole userRole = null;
+            SocketGuildUser user = (SocketGuildUser)Context.User;
+            
+            if (hex.StartsWith("#"))
+                hex = hex.Substring(1);
+
+            string colour = (Context.Message.Content.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[0].Substring(Config.bot.cmdPrefix.Length).ToLower() == "colorme") ? "Color" : "Colour";
+
+            if (hex.Length < 6)
+            {
+                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"{colour}me Failed", $"{hex} is too short! Hex codes are 6 characters long (not counting the #) and {hex} is {hex.Length} characters long!", Context));
+                return;
+            }
+            else if (hex.Length > 6)
+            {
+                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"{colour}me Failed", $"{hex} is too long! Hex codes are 6 characters long (not counting the #) and {hex} is {hex.Length} characters long!", Context));
+                return;
+            }
+
+            foreach (SocketRole r in Context.Guild.Roles)
+            {
+                if (r.Name == "colorrole:" + hex)
+                {
+                    colorFound = true;
+                    role = r;
+                    break;
+                }
+            }
+
+            Color color;
+
+            if (hex == "000000")
+            {
+                hex = "000001";
+            }
+
+            try
+            {
+                int red = int.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
+                int green = int.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
+                int blue = int.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
+
+                color = new Color(red, green, blue);
+            }
+            catch (System.FormatException)
+            {
+                return;
+            }
+
+            foreach (SocketRole r in user.Roles)
+            {
+                if (r.Name == "colorrole:" + hex)
+                {
+                    await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"{colour}me Failed", $"You already have the {colour.ToLower()} " + hex + "!", color, Context));
+                    return;
+                }
+                else if (r.Name.StartsWith("colorrole:"))
+                {
+                    if (r.Members.Count() > 1)
+                    {
+                        await user.RemoveRoleAsync(r);
+                    }
+                    else
+                    {
+                        await r.DeleteAsync();
+                    }
+                }
+            }
+
+            if (colorFound)
+            {
+                await user.AddRoleAsync(role);
+
+                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"{colour}me for " + Context.User.Username, "You have been " + colour.ToLower() + "ed " + hex + "!", color, Context));
+            }
+            else
+            {
+                role = await Context.Guild.CreateRoleAsync("colorrole:" + hex, color: color);
+                await user.AddRoleAsync(role);
+                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"{colour}me for " + Context.User.Username, "You have been " + colour.ToLower() + "ed " + hex + "!", color, Context));
+            }
+        }
     }
 }

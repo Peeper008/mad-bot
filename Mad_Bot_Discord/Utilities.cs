@@ -29,6 +29,8 @@ namespace Mad_Bot_Discord
             return "";
         }
 
+        
+
         public static string GetFormattedAlert(string key, params object[] parameter)
         {
             if (alerts.ContainsKey(key))
@@ -60,6 +62,22 @@ namespace Mad_Bot_Discord
                     x.IconUrl = context.User.GetAvatarUrl();
                 })
                 .WithColor(GetColor());
+
+            return embed.Build();
+        }
+
+        public static Embed EasyEmbed(string title, string description, Color color, SocketCommandContext context)
+        {
+            EmbedBuilder embed = new EmbedBuilder();
+
+            embed.WithTitle(title)
+                .WithDescription(description)
+                .WithFooter(x =>
+                {
+                    x.Text = $"{context.User.Username}#{context.User.Discriminator} at {context.Message.Timestamp}";
+                    x.IconUrl = context.User.GetAvatarUrl();
+                })
+                .WithColor(color);
 
             return embed.Build();
         }
