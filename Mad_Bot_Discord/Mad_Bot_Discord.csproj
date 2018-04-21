@@ -133,14 +133,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BattleStats.cs" />
     <Compile Include="CommandHandler.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Core\DataStorage.cs" />
     <Compile Include="Core\LevelingSystem\Leveling.cs" />
     <Compile Include="Core\UserAccounts\UserAccount.cs" />
     <Compile Include="Core\UserAccounts\UserAccounts.cs" />
-    <Compile Include="DataStorage.cs" />
     <Compile Include="Global.cs" />
+    <Compile Include="Modules\Battle.cs" />
     <Compile Include="Modules\Fun.cs" />
     <Compile Include="Modules\Management.cs" />
     <Compile Include="Modules\Misc.cs" />

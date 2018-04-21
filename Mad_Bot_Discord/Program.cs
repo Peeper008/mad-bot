@@ -56,9 +56,10 @@ namespace Mad_Bot_Discord
             }
         }
 
-        private async Task Log(LogMessage msg)
+        private Task Log(LogMessage msg)
         {
             Console.WriteLine(msg.Message);
+            return Task.CompletedTask;
         }
     }
 }

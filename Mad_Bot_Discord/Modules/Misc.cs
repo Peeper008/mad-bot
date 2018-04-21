@@ -119,11 +119,5 @@ namespace Mad_Bot_Discord.Modules
             var targetRole = user.Guild.GetRole(roleID);
             return user.Roles.Contains(targetRole);
         }
-
-        [Command("data")]
-        public async Task GetData()
-        {
-            await Context.Channel.SendMessageAsync("Data Has " + DataStorage.GetPairsCount() + " pairs.");
-        }
     }
 }

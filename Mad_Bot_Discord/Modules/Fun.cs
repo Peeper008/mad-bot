@@ -162,7 +162,6 @@ namespace Mad_Bot_Discord.Modules
         {
             bool colorFound = false;
             IRole role = null;
-            IRole userRole = null;
             SocketGuildUser user = (SocketGuildUser)Context.User;
             
             if (hex.StartsWith("#"))
