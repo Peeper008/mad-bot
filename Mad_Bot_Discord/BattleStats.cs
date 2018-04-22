@@ -83,6 +83,12 @@ namespace Mad_Bot_Discord
 
         public List<string> Enemies { get; set; }
 
+        public string CurrentEnemy { get; set; }
+
         public string Name { get; set; }
+
+        public int EnemyHP { get; set; }
+
+        public bool InFight { get; set; }
     }
 }
