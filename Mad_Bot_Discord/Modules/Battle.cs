@@ -60,6 +60,16 @@ namespace Mad_Bot_Discord.Modules
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Drop Failed", BattleStats.stats.Name + " does not have " + item + "!", Context));
         }
 
+        [Command("Dropall")]
+        public async Task DropAll()
+        {
+            BattleStats.stats.Items.Clear();
+            BattleStats.stats.Items.Add("Fists");
+            BattleStats.SaveStats();
+
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Drop All", $"All items have been dropped from {BattleStats.stats.Name}'s inventory!", Context));
+        }
+
         [Command("Rename")]
         public async Task Rename([Remainder] string name)
         {
@@ -118,6 +128,16 @@ namespace Mad_Bot_Discord.Modules
             }
 
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Kill Failed", name + " does not exist!", Context));
+        }
+
+        [Command("Killall")]
+        public async Task Killall()
+        {
+            BattleStats.stats.Enemies.Clear();
+            BattleStats.stats.Enemies.Add("Air");
+            BattleStats.SaveStats();
+
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Kill All", $"All enemies have been removed!", Context));
         }
 
         [Command("Fight")]
