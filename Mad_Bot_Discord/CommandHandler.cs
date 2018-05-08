@@ -42,6 +42,38 @@ namespace Mad_Bot_Discord
                 return;
             }
 
+            //._. .-.
+            if (!context.Message.HasStringPrefix(Config.bot.cmdPrefix, ref argPos, StringComparison.OrdinalIgnoreCase)
+                && !msg.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            {
+                string content = msg.Content.Trim();
+                content = content.Replace(" ", string.Empty);
+
+                //if (msg.Author.Id != 339071846651527169) return;
+
+                for (int i = 0; i < msg.Content.Length; i++)
+                {
+                    if (content[i] == '.')
+                    {
+                        for (int e = 1 + i; e < msg.Content.Length; e++)
+                        {
+                            if (content[e] == '-') continue;
+
+                            else if (content[e] == '_') continue;
+
+                            else if (content[e] == '.') break;
+
+                            else
+                            {
+                                return;
+                            }
+                        }
+
+                        await msg.DeleteAsync();
+                    }
+                }
+            }
+
             
             
             // Leveling Up

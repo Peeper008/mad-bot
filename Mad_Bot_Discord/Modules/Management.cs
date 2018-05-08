@@ -220,12 +220,16 @@ namespace Mad_Bot_Discord.Modules
         }
 
         [Command("ModXP")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task ModXP(string memb1, uint xp)
         {
             await Context.Guild.DownloadUsersAsync();
 
             SocketGuildUser member = (SocketGuildUser)Context.Message.MentionedUsers.FirstOrDefault();
+
+            if (Context.User.Id != 226223728076390410)
+            {
+                return;
+            }
 
             UserAccount target = UserAccounts.GetAccount((SocketUser)member);
             target.XP = xp;

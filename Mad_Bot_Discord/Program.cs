@@ -8,17 +8,17 @@ using Discord;
 
 namespace Mad_Bot_Discord
 {
-    class Program
+    internal class Program
     {
-        DiscordSocketClient _client;
-        CommandHandler _handler;
+        private DiscordSocketClient _client;
+        private CommandHandler _handler;
 
-        static void Main(string[] args)
+        private static void Main()
         => new Program().StartAsync().GetAwaiter().GetResult();
 
         public async Task StartAsync()
         {
-            if (Config.bot.token == "" || Config.bot.token == null)
+            if (string.IsNullOrEmpty(Config.bot.token))
             {
                 Console.WriteLine("Please enter values in the config file.");
                 Console.ReadLine();
@@ -47,7 +47,7 @@ namespace Mad_Bot_Discord
             while(input.Trim().ToLower() != "block")
             {
                 input = Console.ReadLine();
-                if (input.Trim().ToLower() == "message")
+                if (input != null && input.Trim().ToLower() == "message")
                     ConsoleSendMessage();
             }
         }
@@ -56,16 +56,39 @@ namespace Mad_Bot_Discord
         {
             Console.WriteLine("Select the guild:");
             var guild = GetSelectedGuild(_client.Guilds);
+
+            if (guild == null)
+            {
+                Console.WriteLine("Cancelled.");
+                return;
+            }
+                
+
             var textChannel = GetSelectedTextChannel(guild.TextChannels);
+
+            if (textChannel == null)
+            {
+                Console.WriteLine("Cancelled.");
+                return;
+            }
+
             var msg = string.Empty;
 
-            while (msg.Trim() == string.Empty)
+            while (string.IsNullOrEmpty((msg)))
             {
                 Console.WriteLine("Your message:");
                 msg = Console.ReadLine();
             }
 
-            await textChannel.SendMessageAsync(msg);
+            try
+            {
+                await textChannel.SendMessageAsync(msg);
+            }
+            catch
+            {
+                Console.WriteLine("Cannot message that channel because you don't have permission.");
+            }
+            
         }
 
         private SocketGuild GetSelectedGuild(IEnumerable<SocketGuild> guilds)
@@ -76,11 +99,17 @@ namespace Mad_Bot_Discord
             {
                 Console.WriteLine($"{i}. - {socketGuilds[i].Name}");
             }
+            Console.WriteLine("Type 'stop' or 'break' to cancel.");
 
             var selectedIndex = -1;
             while(selectedIndex < 0 || selectedIndex > maxIndex)
             {
-                var success = int.TryParse(Console.ReadLine().Trim(), out selectedIndex);
+                var input = Console.ReadLine().Trim();
+
+                if (input == "break" || input == "stop")
+                    return null;
+
+                var success = int.TryParse(input, out selectedIndex);
                 if (!success)
                 {
                     Console.WriteLine("That was an invalid index, try again.");
@@ -101,11 +130,17 @@ namespace Mad_Bot_Discord
             {
                 Console.WriteLine($"{i}. - {textChannels[i].Name}");
             }
+            Console.WriteLine("Type 'stop' or 'break' to cancel.");
 
             var selectedIndex = -1;
             while (selectedIndex < 0 || selectedIndex > maxIndex)
             {
-                var success = int.TryParse(Console.ReadLine().Trim(), out selectedIndex);
+                var input = Console.ReadLine().Trim();
+
+                if (input == "break" || input == "stop")
+                    return null;
+
+                var success = int.TryParse(input, out selectedIndex);
                 if (!success)
                 {
                     Console.WriteLine("That was an invalid index, try again.");
