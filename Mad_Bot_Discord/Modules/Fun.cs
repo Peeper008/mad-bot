@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Channels;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,18 +14,17 @@ namespace Mad_Bot_Discord.Modules
 {
     public class Fun : ModuleBase<SocketCommandContext>
     {
-
-        private Random r = new Random();
+        private readonly Random _r = new Random();
 
         [Command("Pick")]
         public async Task Pick([Remainder] string msg)
         {
-            string[] options = msg.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-            string selection = options[r.Next(0, options.Length)];
+            var options = msg.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+            var selection = options[_r.Next(0, options.Length)];
 
-            string allOptions = "";
-
-            foreach (string o in options)
+            var allOptions = "";
+            
+            foreach (var o in allOptions)
                 allOptions = allOptions + o + " ";
 
             var embed = new EmbedBuilder();
@@ -37,12 +37,11 @@ namespace Mad_Bot_Discord.Modules
         [Command("8Ball")]
         public async Task EightBall([Remainder] string question = "[No Question]")
         {
-            string json = File.ReadAllText("SystemLang/8ballAnswers.json");
+            var json = File.ReadAllText("SystemLang/8ballAnswers.json");
             var data = JsonConvert.DeserializeObject<dynamic>(json);
-            var answers = new List<string>();
-            answers = data.ToObject<List<string>>();
-            string selection = answers[r.Next(0, answers.Count)];
-            string un = Context.User.Username;
+            var answers = data.ToObject<List<string>>();
+            string selection = answers[_r.Next(0, answers.Count)];
+            var un = Context.User.Username;
 
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"8-Ball for {un}", $"You said: `{question}`", 
                 "**Answer:**", selection, Context));
@@ -51,16 +50,16 @@ namespace Mad_Bot_Discord.Modules
         [Command("Roll")]
         public async Task Roll([Remainder] string minmax = "1|6")
         {
-            string[] ns = minmax.Split(new char[] { ' ', '|' }, StringSplitOptions.RemoveEmptyEntries);
+            var ns = minmax.Split(new char[] { ' ', '|' }, StringSplitOptions.RemoveEmptyEntries);
 
-            if (!int.TryParse(ns[0], out int n1))
+            if (!int.TryParse(ns[0], out var n1))
             {
                 await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Failed Roll", $"Failed to parse `{ns[0]}`. " +
                     $"Roll only supports integers, you can separate them using a space or the '|' key. The max integer allowed is 2147483646.", Context));
 
                 return;
             }
-            if (!int.TryParse(ns[1], out int n2))
+            if (!int.TryParse(ns[1], out var n2))
             {
                 await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Failed Roll", $"Failed to parse `{ns[1]}`. " +
                     $"Roll only supports integers, you can separate them using a space or the '|' key. The max integer allowed is 2147483646.", Context));
@@ -83,14 +82,13 @@ namespace Mad_Bot_Discord.Modules
                 await Context.Channel.SendMessageAsync("", embed: embed3);
                 return;
             }
-            else
-                n2++;
+            n2++;
 
             int selection;
 
             try
             {
-                selection = r.Next(n1, n2);
+                selection = _r.Next(n1, n2);
 
             }
             catch (ArgumentOutOfRangeException)
@@ -109,9 +107,9 @@ namespace Mad_Bot_Discord.Modules
         [Command("Coinflip")]
         public async Task Coinflip([Remainder] string throwaway = "")
         {
-            int n = r.Next(0, 2);
+            var n = _r.Next(0, 2);
 
-            string selection = (n == 0) ? "Heads!" : "Tails!";
+            var selection = (n == 0) ? "Heads!" : "Tails!";
 
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
                 "Coinflip for " + Context.User.Username, "I choose... " + "`" + selection + "`", Context));
@@ -137,37 +135,65 @@ namespace Mad_Bot_Discord.Modules
             
            if (target1 == null )
             {
-                SocketGuildUser m = Context.Guild.Users.ElementAt(r.Next(0, Context.Guild.MemberCount));
+                var m = Context.Guild.Users.ElementAt(_r.Next(0, Context.Guild.MemberCount));
                 target1 = m;
             }
 
            if (target2 == null)
             {
-                SocketGuildUser m = Context.Guild.Users.ElementAt(r.Next(0, Context.Guild.MemberCount));
+                var m = Context.Guild.Users.ElementAt(_r.Next(0, Context.Guild.MemberCount));
                 target2 = m;
             }
 
-            string un1 = target1.Username;
-            string un2 = target2.Username;
+            var un1 = target1.Username;
+            var un2 = target2.Username;
 
-            string newName = un1.Substring(0, (un1.Length / 2) + r.Next(-1, 2)) + un2.Substring((un2.Length / 2) + r.Next(-1, 2));
+            var newName = un1.Substring(0, (un1.Length / 2) + _r.Next(-1, 2)) + un2.Substring((un2.Length / 2) + _r.Next(-1, 2));
 
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"Ship for {Context.User.Username}",
-                $"You shipped `{target1.Username}` and `{target2.Username}` together!", "**The Result:**", $"Their new ship name is... `{newName}`", Context));
+                $"You shipped `{target1.Username}` and `{target2.Username}` together!", "**The Result:**", $"Their new ship name is... `{newName}`!", Context));
+        }
+
+        [Command("Mix")]
+        public async Task Mix(string w1 = "", string w2 = "")
+        {
+            if (string.IsNullOrWhiteSpace(w1) || string.IsNullOrWhiteSpace(w2))
+            {
+                await Context.Channel.SendMessageAsync("",
+                    embed: Utilities.EasyEmbed($"Failed Mix", "You must enter two words!", Context));
+            }
+
+            var word = w1.Substring(0, (w1.Length / 2) + _r.Next(-1, 2)) + w2.Substring((w2.Length / 2) + _r.Next(-1, 2));
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"Mix for {Context.User.Username}",
+                $"You mixed the words `{w1}` and `{w2}` together!", "**The Result:**", $"The new word is... `{word}`!",
+                Context));
         }
 
         [Command("Colorme"), Alias("Colourme")]
         [RequireBotPermission(GuildPermission.ManageRoles)]
         public async Task Colorme(string hex)
         {
-            bool colorFound = false;
+
+            hex = hex.ToLower();
+            
+            if (hex == "red") hex = "#FF0000";
+            else if (hex == "green") hex = "#00FF00";
+            else if (hex == "blue") hex = "#0000FF";
+
+            else if (hex == "orange") hex = "#FFA500";
+            else if (hex == "yellow") hex = "#FFFF00";
+            else if (hex == "pink" || hex == "purple" || hex == "violet") hex = "#FF00FF";
+
+
+
+            var colorFound = false;
             IRole role = null;
-            SocketGuildUser user = (SocketGuildUser)Context.User;
+            var user = (SocketGuildUser)Context.User;
             
             if (hex.StartsWith("#"))
                 hex = hex.Substring(1);
 
-            string colour = (Context.Message.Content.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[0].Substring(Config.bot.cmdPrefix.Length).ToLower() == "colorme") ? "Color" : "Colour";
+            var colour = (Context.Message.Content.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[0].Substring(Config.bot.cmdPrefix.Length).ToLower() == "colorme") ? "Color" : "Colour";
 
             if (hex.Length < 6)
             {
@@ -180,14 +206,13 @@ namespace Mad_Bot_Discord.Modules
                 return;
             }
 
-            foreach (SocketRole r in Context.Guild.Roles)
+            foreach (var r in Context.Guild.Roles)
             {
-                if (r.Name == "colorrole:" + hex)
-                {
-                    colorFound = true;
-                    role = r;
-                    break;
-                }
+                if (r.Name != "colorrole:" + hex) continue;
+
+                colorFound = true;
+                role = r;
+                break;
             }
 
             Color color;
@@ -199,9 +224,9 @@ namespace Mad_Bot_Discord.Modules
 
             try
             {
-                int red = int.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
-                int green = int.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
-                int blue = int.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
+                var red = int.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
+                var green = int.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
+                var blue = int.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
 
                 color = new Color(red, green, blue);
             }
@@ -210,7 +235,7 @@ namespace Mad_Bot_Discord.Modules
                 return;
             }
 
-            foreach (SocketRole r in user.Roles)
+            foreach (var r in user.Roles)
             {
                 if (r.Name == "colorrole:" + hex)
                 {
