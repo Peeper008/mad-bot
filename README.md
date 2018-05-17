@@ -6,8 +6,8 @@ Here you can see all the progress, updates and source code for M.A.D Bot.
 
 If you want to submit a bug or post a suggestion, hit the `issues` tab at the top there and press the green _"New Issue"_ button, and type out your suggestion/bug. Please add either [suggestion] or [bug] before the title.
 
-Example:
+Examples:
 
-[suggestion] please add thing!
+`[suggestion] please add thing!`
 
-[bug] found a bad thing!
+`[bug] found a bad thing!`
