@@ -9,4 +9,5 @@ If you want to submit a bug or post a suggestion, hit the `issues` tab at the to
 Example:
 
 [suggestion] please add thing!
+
 [bug] found a bad thing!
