@@ -32,6 +32,8 @@ namespace Mad_Bot_Discord
             _client.Ready += ClientReady;
             _client.Log += Log;
             _client.ReactionAdded += OnReactionAdded;
+            _client.UserJoined += UserJoined;
+
             await _client.LoginAsync(TokenType.Bot, Config.bot.token);
             await _client.StartAsync();
             _handler = new CommandHandler();
@@ -39,6 +41,19 @@ namespace Mad_Bot_Discord
             await _handler.InitializeAsync(_client);
             ConsoleInput();
             await Task.Delay(-1);
+        }
+
+        private async Task UserJoined(SocketGuildUser u)
+        {
+            SocketRole role = u.Guild.GetRole(352208507581497347);
+            
+            foreach (IRole r in u.Roles)
+            {
+                if (r.Id == role.Id) return;
+            }
+
+            await u.AddRoleAsync(role);
+            
         }
 
         private async Task ConsoleInput()

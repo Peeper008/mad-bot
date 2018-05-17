@@ -27,9 +27,9 @@ namespace Mad_Bot_Discord
         private async Task HandleCommandAsync(SocketMessage s)
         {
             var msg = s as SocketUserMessage;
-            
 
             if (msg == null) return;
+
             var context = new SocketCommandContext(_client, msg);
             if (context.User.IsBot) return;
             int argPos = 0;
@@ -42,6 +42,22 @@ namespace Mad_Bot_Discord
                 return;
             }
 
+            // Leveling Up
+            if (!context.Message.HasStringPrefix(Config.bot.cmdPrefix, ref argPos, StringComparison.OrdinalIgnoreCase)
+                && !msg.HasMentionPrefix(_client.CurrentUser, ref argPos))
+                Leveling.UserSentMessage((SocketGuildUser)context.User, (SocketTextChannel)context.Channel);
+
+            if (msg.HasStringPrefix(Config.bot.cmdPrefix, ref argPos, StringComparison.OrdinalIgnoreCase)
+                || msg.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            {
+                var result = await _service.ExecuteAsync(context, argPos);
+                if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
+                {
+                    Console.WriteLine(result.ErrorReason);
+                }
+            }
+
+
             //._. .-.
             if (!context.Message.HasStringPrefix(Config.bot.cmdPrefix, ref argPos, StringComparison.OrdinalIgnoreCase)
                 && !msg.HasMentionPrefix(_client.CurrentUser, ref argPos))
@@ -49,7 +65,7 @@ namespace Mad_Bot_Discord
                 string content = msg.Content.Trim();
                 content = content.Replace(" ", string.Empty);
 
-                //if (msg.Author.Id != 339071846651527169) return;
+                if (msg.Author.Id != 339071846651527169) return;
 
                 for (int i = 0; i < msg.Content.Length; i++)
                 {
@@ -74,22 +90,7 @@ namespace Mad_Bot_Discord
                 }
             }
 
-            
-            
-            // Leveling Up
-            if (!context.Message.HasStringPrefix(Config.bot.cmdPrefix, ref argPos, StringComparison.OrdinalIgnoreCase)
-                && !msg.HasMentionPrefix(_client.CurrentUser, ref argPos))
-            Leveling.UserSentMessage((SocketGuildUser)context.User, (SocketTextChannel) context.Channel);
-            
-            if (msg.HasStringPrefix(Config.bot.cmdPrefix, ref argPos, StringComparison.OrdinalIgnoreCase)
-                || msg.HasMentionPrefix(_client.CurrentUser, ref argPos))
-            {
-                var result = await _service.ExecuteAsync(context, argPos);
-                if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
-                {
-                    Console.WriteLine(result.ErrorReason);
-                }
-            }
+
         }
     }
 }

@@ -220,23 +220,70 @@ namespace Mad_Bot_Discord.Modules
         }
 
         [Command("ModXP")]
-        public async Task ModXP(string memb1, uint xp)
+        public async Task ModXP(uint xp, [Remainder] string memb1 = null)
         {
             await Context.Guild.DownloadUsersAsync();
 
-            SocketGuildUser member = (SocketGuildUser)Context.Message.MentionedUsers.FirstOrDefault();
+            SocketGuildUser member = null;
 
-            if (Context.User.Id != 226223728076390410)
+            if (!string.IsNullOrWhiteSpace(memb1))
             {
-                return;
+                member = (SocketGuildUser)Context.Message.MentionedUsers.FirstOrDefault();
+            }
+            else
+            {
+                member = (SocketGuildUser) Context.User;
             }
 
             UserAccount target = UserAccounts.GetAccount((SocketUser)member);
+            target.LastMessage = DateTime.UtcNow - TimeSpan.FromMinutes(1);
             target.XP = xp;
             UserAccounts.SaveAccounts();
 
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("ModXP for " + Context.User.Username, $"{member.Username}'s XP is now {xp}!", Context));
 
+        }
+
+        [Command("FixAll")]
+        public async Task FixAll()
+        {
+
+            /*
+               352208507581497347 0
+               363393500995387392 5
+               446778429832953876 15 
+               363393574060163072 30
+               363393639956873217 50
+               363393659930148865 100
+            */
+
+            await Context.Guild.DownloadUsersAsync();
+
+            if (Context.User.Id != 226223728076390410) return;
+
+            foreach (SocketGuildUser user in Context.Guild.Users)
+            {
+                foreach (IRole role in user.Roles)
+                {
+                    if (role.Id == 352208507581497347 || role.Id == 363393500995387392 
+                        || role.Id == 446778429832953876 || role.Id ==  363393574060163072 
+                        || role.Id == 363393639956873217 || role.Id == 363393659930148865) await user.RemoveRoleAsync(role);
+
+                    UserAccount target = UserAccounts.GetAccount(user);
+
+                    SocketGuild guild = Context.Guild;
+
+                    if (target.LevelNumber < 1) await user.AddRoleAsync(guild.GetRole(352208507581497347));
+                    if (target.LevelNumber >= 5 && target.LevelNumber < 15) await user.AddRoleAsync(guild.GetRole(363393500995387392));
+                    if (target.LevelNumber >= 15 && target.LevelNumber < 30) await user.AddRoleAsync(guild.GetRole(446778429832953876));
+                    if (target.LevelNumber >= 30 && target.LevelNumber < 50) await user.AddRoleAsync(guild.GetRole(363393574060163072));
+                    if (target.LevelNumber >= 50 && target.LevelNumber < 100) await user.AddRoleAsync(guild.GetRole(363393639956873217));
+                    if (target.LevelNumber >= 100) await user.AddRoleAsync(guild.GetRole(363393659930148865));
+                    
+                }
+            }
+
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("FixAll for " + Context.User.Username, "Everyone's ranks have been fixed.", Context));
         }
     }
 }

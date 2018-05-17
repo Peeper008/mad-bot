@@ -155,17 +155,26 @@ namespace Mad_Bot_Discord.Modules
         }
 
         [Command("Mix")]
-        public async Task Mix(string w1 = "", string w2 = "")
+        public async Task Mix([Remainder] string words = "")
         {
-            if (string.IsNullOrWhiteSpace(w1) || string.IsNullOrWhiteSpace(w2))
+
+            string[] newWords = words.Split(new char[] {'|'});
+
+            if (newWords.Length < 2)
             {
                 await Context.Channel.SendMessageAsync("",
                     embed: Utilities.EasyEmbed($"Failed Mix", "You must enter two words!", Context));
             }
 
-            var word = w1.Substring(0, (w1.Length / 2) + _r.Next(-1, 2)) + w2.Substring((w2.Length / 2) + _r.Next(-1, 2));
+            if (string.IsNullOrWhiteSpace(newWords[0]) || string.IsNullOrWhiteSpace(newWords[1]))
+            {
+                await Context.Channel.SendMessageAsync("",
+                    embed: Utilities.EasyEmbed($"Failed Mix", "You must enter two words!", Context));
+            }
+
+            var word = newWords[0].Substring(0, (newWords[0].Length / 2) + _r.Next(-1, 2)) + newWords[1].Substring((newWords[1].Length / 2) + _r.Next(-1, 2));
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed($"Mix for {Context.User.Username}",
-                $"You mixed the words `{w1}` and `{w2}` together!", "**The Result:**", $"The new word is... `{word}`!",
+                $"You mixed the words `{newWords[0]}` and `{newWords[1]}` together!", "**The Result:**", $"The new word is... `{word}`!",
                 Context));
         }
 
