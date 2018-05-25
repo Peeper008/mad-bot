@@ -237,17 +237,18 @@ namespace Mad_Bot_Discord.Modules
 
             UserAccount target = UserAccounts.GetAccount((SocketUser)member);
             target.LastMessage = DateTime.UtcNow - TimeSpan.FromMinutes(1);
+            uint oldXP = target.XP;
             target.XP = xp;
             UserAccounts.SaveAccounts();
 
-            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("ModXP for " + Context.User.Username, $"{member.Username}'s XP is now {xp}!", Context));
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("ModXP for " + Context.User.Username, $"{member.Username}'s XP is now {xp}! It was {oldXP} previously.", Context));
 
         }
 
         [Command("FixAll")]
         public async Task FixAll()
         {
-
+            //WARING, DO NOT USE UNLESS VERY NEEDED
             /*
                352208507581497347 0
                363393500995387392 5

@@ -28,11 +28,12 @@ namespace Mad_Bot_Discord
             {
                 LogLevel = LogSeverity.Verbose
             });
-
+            
             _client.Ready += ClientReady;
             _client.Log += Log;
             _client.ReactionAdded += OnReactionAdded;
             _client.UserJoined += UserJoined;
+            _client.UserLeft += UserLeft;
 
             await _client.LoginAsync(TokenType.Bot, Config.bot.token);
             await _client.StartAsync();
@@ -41,6 +42,17 @@ namespace Mad_Bot_Discord
             await _handler.InitializeAsync(_client);
             ConsoleInput();
             await Task.Delay(-1);
+        }
+
+        private async Task UserLeft(SocketGuildUser user)
+        {
+            SocketGuild guild = user.Guild;
+
+            SocketTextChannel channel = guild.GetChannel(432584892522561559) as SocketTextChannel;
+
+            EmbedBuilder embed = new EmbedBuilder().WithTitle("User Left!").WithDescription($"{user.Username}#{user.Discriminator} has left the server!")
+                .WithThumbnailUrl(user.GetAvatarUrl()).WithColor(Utilities.GetColor());
+            await channel.SendMessageAsync("", embed: embed);
         }
 
         private async Task UserJoined(SocketGuildUser u)

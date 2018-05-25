@@ -40,6 +40,32 @@ namespace Mad_Bot_Discord.Modules
 
         }
 
+        [Command("Inventory"), Alias("Inv")]
+        public async Task Inventory()
+        {
+            string items = "";
+
+            foreach (string item in BattleStats.stats.Items)
+            {
+                items = items + item + "\n";
+            }
+
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Inventory for " + Context.User.Username, "Items: \n" + items, Context));
+        }
+
+        [Command("Enemies")]
+        public async Task Enemies()
+        {
+            string enemies = "";
+
+            foreach (string enemy in BattleStats.stats.Enemies)
+            {
+                enemies = enemies + enemy + "\n";
+            }
+
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Inventory for " + Context.User.Username, "Enemies: \n" + enemies, Context));
+        }
+
         [Command("Drop")]
         public async Task Drop([Remainder] string item)
         {
