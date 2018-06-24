@@ -13,6 +13,8 @@ namespace Mad_Bot_Discord.Modules
     public class Management : ModuleBase<SocketCommandContext>
     {
 
+        //Test
+
         [Command("Mute")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.ManageMessages)]
@@ -222,6 +224,14 @@ namespace Mad_Bot_Discord.Modules
         [Command("ModXP")]
         public async Task ModXP(uint xp, [Remainder] string memb1 = null)
         {
+            SocketGuildUser owner = Context.Guild.GetUser(226223728076390410);
+
+            if (Context.User.Id != 226223728076390410)
+            {
+                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("ModXP Failed", $"You must be {owner.Username} to use this command!", Context));
+                return;
+            }
+
             await Context.Guild.DownloadUsersAsync();
 
             SocketGuildUser member = null;

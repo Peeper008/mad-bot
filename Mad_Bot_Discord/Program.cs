@@ -23,7 +23,7 @@ namespace Mad_Bot_Discord
                 Console.WriteLine("Please enter values in the config file.");
                 Console.ReadLine();
             }
-
+            
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Verbose
