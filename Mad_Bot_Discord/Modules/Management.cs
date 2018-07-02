@@ -13,7 +13,47 @@ namespace Mad_Bot_Discord.Modules
     public class Management : ModuleBase<SocketCommandContext>
     {
 
-        //Test
+        [Command("Serverinfo"), Alias("si")]
+        public async Task Serverinfo()
+        {
+            await Context.Guild.DownloadUsersAsync();
+
+            string name = Context.Guild.Name;
+            ulong id = Context.Guild.Id;
+
+            string iconUrl = Context.Guild.IconUrl;
+
+            DateTime createdDT = Context.Guild.CreatedAt.UtcDateTime;
+            string createdS = createdDT.ToString();
+            TimeSpan age = DateTime.Now.Subtract(createdDT);
+
+            SocketGuildUser owner = Context.Guild.Owner;
+
+            int membCount = Context.Guild.MemberCount;
+
+            int roleCount = Context.Guild.Roles.Count;
+
+            EmbedBuilder embed = new EmbedBuilder().
+                WithColor(Utilities.GetColor()).
+                WithImageUrl(iconUrl).
+                WithUrl(iconUrl).
+                WithTitle("Serverinfo for " + Context.User.Username).
+                AddField("Name:", name, true).
+                AddField("ID:", id.ToString(), true).
+                AddField("Created At:", createdDT.ToString() + "\nmm/dd/yy", true).
+                AddField("Age:", Math.Floor(age.TotalDays) + " days.", true).
+                AddField("Owner:", owner.Username + "#" + owner.Discriminator, true).
+                AddField("Member Count:", membCount.ToString(), true).
+                AddField("Role Count:", roleCount.ToString(), true).
+                WithFooter(x =>
+                {
+                    x.Text = Context.User.Username + "#" + Context.User.Discriminator + " at " + DateTime.Now.ToUniversalTime().ToString();
+                    x.IconUrl = Context.User.GetAvatarUrl();
+                });
+
+
+            await Context.Channel.SendMessageAsync("", embed: embed.Build());
+        }
 
         [Command("Mute")]
         [RequireUserPermission(GuildPermission.KickMembers)]
