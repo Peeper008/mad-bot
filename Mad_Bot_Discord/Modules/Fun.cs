@@ -34,7 +34,7 @@ namespace Mad_Bot_Discord.Modules
 
         }
 
-        [Command("8Ball")]
+        [Command("8Ball"), Alias("8b")]
         public async Task EightBall([Remainder] string question = "[No Question]")
         {
             var json = File.ReadAllText("SystemLang/8ballAnswers.json");

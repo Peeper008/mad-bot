@@ -261,7 +261,7 @@ namespace Mad_Bot_Discord.Modules
             await Context.Channel.SendMessageAsync("", embed: embed);
         }
 
-        [Command("ModXP")]
+        [Command("ModXP"), Alias("mxp")]
         public async Task ModXP(uint xp, [Remainder] string memb1 = null)
         {
             SocketGuildUser owner = Context.Guild.GetUser(226223728076390410);
