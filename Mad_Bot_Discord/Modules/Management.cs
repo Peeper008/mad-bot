@@ -55,6 +55,13 @@ namespace Mad_Bot_Discord.Modules
             await Context.Channel.SendMessageAsync("", embed: embed.Build());
         }
 
+        [Command("Roles"), Alias("Ranks")]
+        public async Task Roles()
+        {
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Role list for " + Context.User.Username, "**Roles:**\n\n**Happy Visitor** - Earned by joining the server.\n\n**Unhappy Member** - Earned by reaching level 5." +
+                "\n\n**Bothered Regular** - Earned by reaching level 15.\n\n**Annoyed Addict** - Earned by reaching level 30.\n\n**Angry Elder** - Earned by reaching level 50.\n\n**Mad God** - Earned by reaching level 100.", Context));
+        }
+
         [Command("Mute")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.ManageMessages)]
@@ -121,8 +128,6 @@ namespace Mad_Bot_Discord.Modules
 
             SocketGuildUser user = (SocketGuildUser) Context.Message.MentionedUsers.FirstOrDefault();
 
-            Console.WriteLine("HELP");
-
             var userAccount = UserAccounts.GetAccount((SocketUser)user);
             userAccount.NumberOfWarnings++;
             UserAccounts.SaveAccounts();
@@ -141,6 +146,8 @@ namespace Mad_Bot_Discord.Modules
                     })
                     .WithThumbnailUrl(user.GetAvatarUrl())
                     .WithColor(Utilities.GetColor());
+
+                await user.SendMessageAsync("You've been kicked from " + Context.Guild.Name + " by " + Context.User.Username + ".\n\nReason: " + "You've reached 3 warnings.");
 
                 await Context.Channel.SendMessageAsync("", embed: embed4);
                 await user.KickAsync("Reached 3 warnings.");
@@ -162,6 +169,8 @@ namespace Mad_Bot_Discord.Modules
                     })
                     .WithThumbnailUrl(user.GetAvatarUrl())
                     .WithColor(Utilities.GetColor());
+
+                await user.SendMessageAsync("You've been banned from " + Context.Guild.Name + " by " + Context.User.Username + ".\n\nReason: " + "You've reached 6 warnings.");
 
                 await Context.Channel.SendMessageAsync("", embed: embed3);
 
@@ -187,6 +196,8 @@ namespace Mad_Bot_Discord.Modules
 
                 await Context.Channel.SendMessageAsync("", embed: embed2);
 
+                await user.SendMessageAsync("You've been banned from " + Context.Guild.Name + " by " + Context.User.Username + ".\n\nReason: " + "You've reached 6+ warnings.");
+
                 await user.Guild.AddBanAsync(user, 0, "Passed 6 warnings.");
                 userAccount.PunishmentsByWarnings++;
 
@@ -195,6 +206,8 @@ namespace Mad_Bot_Discord.Modules
             }
 
             var embed = new EmbedBuilder();
+
+            await user.SendMessageAsync(Context.User.Username + " has given you a warning. You now have " + userAccount.NumberOfWarnings + " warnings.");
 
             embed.WithTitle("Warning by " + Context.User.Username)
                 .WithDescription(user.Mention + " now has " + userAccount.NumberOfWarnings + " warnings.")
@@ -218,6 +231,12 @@ namespace Mad_Bot_Discord.Modules
 
             SocketGuildUser user = (SocketGuildUser)Context.Message.MentionedUsers.FirstOrDefault();
 
+
+            if (reason == "No reason provided.")
+                await user.SendMessageAsync("You've been kicked from " + Context.Guild.Name + " by " + Context.User.Username + ".");
+            else
+                await user.SendMessageAsync("You've been kicked from " + Context.Guild.Name + " by " + Context.User.Username + ".\n\nReason: " + reason);
+            
             await user.KickAsync(reason);
 
             var embed = new EmbedBuilder();
@@ -243,6 +262,11 @@ namespace Mad_Bot_Discord.Modules
             await Context.Guild.DownloadUsersAsync();
 
             SocketGuildUser user = (SocketGuildUser)Context.Message.MentionedUsers.FirstOrDefault();
+
+            if (reason == "No reason provided.")
+                await user.SendMessageAsync("You've been banned from " + Context.Guild.Name + " by " + Context.User.Username + ".");
+            else
+                await user.SendMessageAsync("You've been banned from " + Context.Guild.Name + " by " + Context.User.Username + ".\n\nReason: " + reason);
 
             await user.Guild.AddBanAsync(user, 0, reason);
 
