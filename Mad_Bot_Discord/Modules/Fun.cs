@@ -16,7 +16,7 @@ namespace Mad_Bot_Discord.Modules
     {
         private readonly Random _r = new Random();
 
-        [Command("Pick")]
+        [Command("Pick"), Alias("Choose")]
         public async Task Pick([Remainder] string msg)
         {
             var options = msg.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
