@@ -12,6 +12,7 @@ namespace Mad_Bot_Discord
 {
     class Utilities
     {
+        // Creates the random class variable.
         private static Random r = new Random();
 
         private static Dictionary<string, string> alerts;
