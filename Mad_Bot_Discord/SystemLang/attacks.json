@@ -7,10 +7,10 @@
 	"{0} throws {2} at {1} then stabs them with {2}!",
 	"{0} sweeps {1}'s legs out from under them then slices them with {2}!",
 	"{0} throws {2} at {1}'s face then stabs them with {2}!",
-	"{0} infuses the {2} with the power of ***STALE MEMES*** then stabs {1} with {2}!",
 	"{0} shoots {1}'s face with {2}!",
 	"{0} eats {1}'s legs with {2}!",
 	"{0} explodes {1} with {2}!",
-	"{0} wallops {1} with {2}. WHAM! POW! BONK!"
+	"{0} wallops {1} with {2}. WHAM! POW! BONK!",
+	"{0} throws {2} at {1}!"
 
 ]

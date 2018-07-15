@@ -10,7 +10,7 @@ namespace Mad_Bot_Discord
 {
     internal class Program
     {
-        private DiscordSocketClient _client;
+        static private DiscordSocketClient _client;
         private CommandHandler _handler;
 
         private static void Main()
@@ -425,7 +425,10 @@ namespace Mad_Bot_Discord
         // --- Error Logger ---
 
 
-
+        public static async void RefreshGame()
+        {
+            await _client.SetGameAsync(String.Format(Config.bot.game, Config.bot.cmdPrefix));
+        }
 
         // Starts once the client is ready.
         private async Task ClientReady()

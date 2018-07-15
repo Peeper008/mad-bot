@@ -37,8 +37,23 @@ namespace Mad_Bot_Discord
                 bot = JsonConvert.DeserializeObject<BotConfig>(json);
 
             }
+
+
+        }
+
+        public static void Refresh()
+        {
+            if (!File.Exists(configFolder + "/" + configFile))
+            {
+                return;
+            }
+
+            string json = File.ReadAllText(configFolder + "/" + configFile);
+            bot = JsonConvert.DeserializeObject<BotConfig>(json);
         }
     }
+
+
 
     public struct BotConfig
     {
