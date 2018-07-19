@@ -17,6 +17,8 @@ namespace Mad_Bot_Discord
         => new Program().StartAsync().GetAwaiter().GetResult();
 
 
+
+
         // Startup Sequence
         public async Task StartAsync()
         {
@@ -63,7 +65,6 @@ namespace Mad_Bot_Discord
             await Task.Delay(-1);
             
         }
-
 
 
         // Happens every time a user leaves.

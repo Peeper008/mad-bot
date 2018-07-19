@@ -11,7 +11,7 @@ namespace Mad_Bot_Discord
     public class BattleStats
     {
         public static BattleInfo stats;
-
+        
         static string battleFolder = "Resources";
         static string battleFile = "battleInfo.json";
 

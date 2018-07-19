@@ -168,6 +168,7 @@
     <Compile Include="Core\LevelingSystem\Leveling.cs" />
     <Compile Include="Core\UserAccounts\UserAccount.cs" />
     <Compile Include="Core\UserAccounts\UserAccounts.cs" />
+    <Compile Include="DungeonGame.cs" />
     <Compile Include="Global.cs" />
     <Compile Include="Modules\Battle.cs" />
     <Compile Include="Modules\Fun.cs" />
