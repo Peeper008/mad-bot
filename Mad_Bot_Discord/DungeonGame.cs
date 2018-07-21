@@ -3,12 +3,9 @@ using Discord.WebSocket;
 using Mad_Bot_Discord.Core.UserAccounts;
 using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 
@@ -44,13 +41,20 @@ namespace Mad_Bot_Discord
     /// Custom Player Icon (map)
     /// Custom Color (map) ini = blue, css = red,
     /// Consumables that you can save between runs.
+    /// MB as strongest boss?
+    /// Multiple scores on the leaderboard such as most rooms explored in a single run or most weapons gathered in a single run.
+    /// Themes and different modes (like wild-west only)
+    /// enemy versions of other users whove played before, matching their stats and the current theme.
+    /// when you die have it say "You died." along with some random text like "this is so sad alexa play despacito"
     /// 
     /// </summary>
 
 
     public class DungeonGame : ModuleBase<SocketCommandContext>
     {
-
+        public string tutorialMessage = $"Reply with `{Config.bot.cmdPrefix}dg <direction>` to move, `{Config.bot.cmdPrefix}dg map` to view the map" +
+            $", `{Config.bot.cmdPrefix}dg inv` to view your inventory, `{Config.bot.cmdPrefix}dg types` to view what room types do/appear like on the map, " +
+            $"or `{Config.bot.cmdPrefix}dg leave` to leave the dungeon and finalize your score.";
 
         private static List<SaveData> saves;
         static string savePath = "Resources/dgsaves.json";
@@ -152,6 +156,9 @@ namespace Mad_Bot_Discord
                     Name = Sword_BladeType[1].NamePart + Sword_BladeThickness[0].NamePart + Sword_HiltType[1].NamePart + Sword_HiltSize[0].NamePart
                 };
 
+                // Sets the equipped weapon to the starting sword.
+                data.EquippedWeapon = startingSword;
+
                 // Creates a starting dungeon.
                 DungeonRoom startingRoom = new DungeonRoom
                 {
@@ -180,6 +187,9 @@ namespace Mad_Bot_Discord
 
                 // Sets up the player's inventory.
                 data.Inventory = new Weapons { Swords = new List<Sword> { startingSword }, Guns = new List<Gun> { } };
+                
+                // Makes sure they arent in a fight.
+                data.InAFight = false;
 
                 // Saves all that new data.
                 SaveData();
@@ -188,7 +198,6 @@ namespace Mad_Bot_Discord
             // Tests if the player is in a fight.
             if (!data.InAFight)
             {
-                sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
                 if (args.Length > 0)
                 {
                     switch (args[0].ToLower())
@@ -196,7 +205,23 @@ namespace Mad_Bot_Discord
                         case "left":
                             if (data.CurrentRoom.RoomDoors.Contains(Direction.Left))
                             {
+                                
+
                                 data.CurrentRoom = RoomGenerator(new Coordinates { X = data.CurrentRoom.Coordinates.X - 1, Y = data.CurrentRoom.Coordinates.Y }, data);
+                                sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
+
+                                if (data.CurrentRoom.Type == RoomType.Enemy)
+                                {
+                                    data.CurrentEnemy = EnemyGenerator();
+                                    data.InAFight = true;
+
+                                    sentence = sentence + "You walk into the room to the left of you and are attacked by a " + data.CurrentEnemy.Name + $"! Type `{Config.bot.cmdPrefix}dg` to start.";
+                                    data.Rooms.Add(Coordinates.CoordsToString(data.CurrentRoom.Coordinates), data.CurrentRoom);
+
+                                    SaveData();
+                                    await Context.Channel.SendMessageAsync(sentence);
+                                    return;
+                                }
 
                                 if (!data.Rooms.ContainsKey(Coordinates.CoordsToString(data.CurrentRoom.Coordinates)))
                                 {
@@ -222,6 +247,20 @@ namespace Mad_Bot_Discord
                             if (data.CurrentRoom.RoomDoors.Contains(Direction.Right))
                             {
                                 data.CurrentRoom = RoomGenerator(new Coordinates { X = data.CurrentRoom.Coordinates.X + 1, Y = data.CurrentRoom.Coordinates.Y }, data);
+                                sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
+
+                                if (data.CurrentRoom.Type == RoomType.Enemy)
+                                {
+                                    data.CurrentEnemy = EnemyGenerator();
+                                    data.InAFight = true;
+
+                                    sentence = sentence + "You walk into the room to the right of you and are attacked by a " + data.CurrentEnemy.Name + $"! Type `{Config.bot.cmdPrefix}dg` to start.";
+                                    data.Rooms.Add(Coordinates.CoordsToString(data.CurrentRoom.Coordinates), data.CurrentRoom);
+
+                                    SaveData();
+                                    await Context.Channel.SendMessageAsync(sentence);
+                                    return;
+                                }
 
                                 if (!data.Rooms.ContainsKey(Coordinates.CoordsToString(data.CurrentRoom.Coordinates)))
                                 {
@@ -243,9 +282,26 @@ namespace Mad_Bot_Discord
                             break;
 
                         case "front":
+                        case "up":
+                        case "forward":
+                        case "forwards":
                             if (data.CurrentRoom.RoomDoors.Contains(Direction.Front))
                             {
                                 data.CurrentRoom = RoomGenerator(new Coordinates { X = data.CurrentRoom.Coordinates.X, Y = data.CurrentRoom.Coordinates.Y + 1 }, data);
+                                sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
+
+                                if (data.CurrentRoom.Type == RoomType.Enemy)
+                                {
+                                    data.CurrentEnemy = EnemyGenerator();
+                                    data.InAFight = true;
+
+                                    sentence = sentence + "You walk into the room ahead of you and are attacked by a " + data.CurrentEnemy.Name + $"! Type `{Config.bot.cmdPrefix}dg` to start.";
+                                    data.Rooms.Add(Coordinates.CoordsToString(data.CurrentRoom.Coordinates), data.CurrentRoom);
+
+                                    SaveData();
+                                    await Context.Channel.SendMessageAsync(sentence);
+                                    return;
+                                }
 
                                 if (!data.Rooms.ContainsKey(Coordinates.CoordsToString(data.CurrentRoom.Coordinates)))
                                 {
@@ -267,9 +323,30 @@ namespace Mad_Bot_Discord
                             break;
 
                         case "back":
+                        case "down":
+                        case "backward":
+                        case "backwards":
                             if (data.CurrentRoom.RoomDoors.Contains(Direction.Back))
                             {
                                 data.CurrentRoom = RoomGenerator(new Coordinates { X = data.CurrentRoom.Coordinates.X, Y = data.CurrentRoom.Coordinates.Y - 1}, data);
+                                sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
+
+                                if (data.CurrentRoom.Type == RoomType.Enemy)
+                                {
+                                    if (!data.Rooms.ContainsKey(Coordinates.CoordsToString(data.CurrentRoom.Coordinates)))
+                                    {
+                                        data.CurrentEnemy = EnemyGenerator();
+                                        data.InAFight = true;
+
+                                        sentence = sentence + "You walk into the room behind you and are attacked by a " + data.CurrentEnemy.Name + $"! Type `{Config.bot.cmdPrefix}dg` to start.";
+                                        data.Rooms.Add(Coordinates.CoordsToString(data.CurrentRoom.Coordinates), data.CurrentRoom);
+
+                                        SaveData();
+                                        await Context.Channel.SendMessageAsync(sentence);
+                                        return;
+
+                                    }
+                                }
 
                                 if (!data.Rooms.ContainsKey(Coordinates.CoordsToString(data.CurrentRoom.Coordinates)))
                                 {
@@ -290,6 +367,8 @@ namespace Mad_Bot_Discord
                             break;
 
                         case "map":
+                            sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
+
                             List<double> allX = new List<double>();
                             List<double> allY = new List<double>();
 
@@ -391,6 +470,8 @@ namespace Mad_Bot_Discord
                             break;
                         case "inv":
                         case "inventory":
+                            sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
+
                             string tba = "Your current inventory:\n\n**Swords:** \n\n";
                             Weapons w = data.Inventory;
 
@@ -417,6 +498,28 @@ namespace Mad_Bot_Discord
                             sentence = sentence + tba + "\n\n";
 
                             break;
+
+                        case "leave":
+                        case "exit":
+                        case "quit":
+                            string[] encouragingWords = { "Wow, you", "Incredible! You", "Good job, you", "Nice work, you", "That's crazy! You", "Meh, you", "**yawn** you" };
+                            string word = encouragingWords[r.Next(encouragingWords.Length)];
+
+                            sentence = $"You left the dungeon. {word} got [0] score.";
+                            await Context.Channel.SendMessageAsync(sentence);
+                            data.InGame = false;
+                            SaveData();
+                            return;
+
+                        case "types":
+                            sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
+
+                            sentence = sentence + "Room Types:\n\nEmpty: An empty room. Appears as `[ ]` in the map.\nEnemy: A room that contains enemies. Appears as `[#]` in the map.\n" +
+                                "Loot: A room that gives you random loot. Appears as `[$]` in the map.\nBoss: A room that contains a boss. Appears as `[!]` in the map.\n" +
+                                "You: You appear as `<@>` on the map.\n\n";
+
+                            await Context.Channel.SendMessageAsync(sentence);
+                            return;
                     }
                 }
 
@@ -440,15 +543,128 @@ namespace Mad_Bot_Discord
 
                         }
                     }
-                    sentence = sentence + $"There are {data.CurrentRoom.RoomCount} rooms{one} Reply with `mb.dg <direction>` to move, `mb.dg map` to view the map, or `mb.dg inv` to view your inventory.";
+                    sentence = sentence + $"There are {data.CurrentRoom.RoomCount} rooms{one} {tutorialMessage}";
 
                 }
                 else
                 {
-                    sentence = sentence = $"There is one room to your {data.CurrentRoom.RoomDoors[0].ToString().ToLower()}. Reply with `mb.dg <direction>` to move, `mb.dg map` to view the map, or `mb.dg inv` to view your inventory.";
+                    sentence = sentence = $"There is one room to your {data.CurrentRoom.RoomDoors[0].ToString().ToLower()}. {tutorialMessage}";
                 }
 
                 await Context.Channel.SendMessageAsync(sentence);
+
+            }
+            else
+            {
+                if (args.Length > 0)
+                {
+                    switch (args[0].ToLower())
+                    {
+                        case "attack":
+
+                            double doingDamage = (double)data.EquippedWeapon.Damage + r.Next(-1, 5); ;
+                            sentence = sentence + "You attack the " + data.CurrentEnemy.Name + " with your " + data.EquippedWeapon.Name + " dealing " + doingDamage + " damage!";
+                            data.CurrentEnemy.Health -= doingDamage;
+
+                            if (data.EquippedWeapon.StunChance > 0)
+                            {
+                                if (r.Next(0, 10) <= data.EquippedWeapon.StunChance)
+                                {
+                                    data.CurrentEnemy.StunLeft = data.EquippedWeapon.StunAmount + 1;
+                                    sentence = sentence + " It was stunned for " + data.EquippedWeapon.StunAmount + " turns!";
+                                }
+
+                            }
+
+                            if (data.CurrentEnemy.Health < 0) data.CurrentEnemy.Health = 0;
+
+                            sentence = sentence + "\n\n" + data.CurrentEnemy.Name + " has " + data.CurrentEnemy.Health + " HP left!";
+
+                            int eTurns = (data.StunLeft == 0) ? 1 : data.StunLeft + 1;
+
+                            if (data.CurrentEnemy.Health <= 0)
+                            {
+                                sentence = sentence + $"\n\nYou defeated the {data.CurrentEnemy.Name} and gained [0] gold!";
+                                data.CurrentRoom.Type = RoomType.Empty;
+                                data.Rooms[Coordinates.CoordsToString(data.CurrentRoom.Coordinates)].Type = RoomType.Empty;
+                                data.InAFight = false;
+
+                                await Context.Channel.SendMessageAsync(sentence);
+
+                                SaveData();
+                                return;
+                            }
+
+                            if (data.CurrentEnemy.StunLeft < 1)
+                            {
+                                for (int i = 0; i < eTurns; i++)
+                                {
+                                    double damageDone = data.CurrentEnemy.Damage + r.Next(-3, 4);
+                                   
+                                    if (damageDone < 1)
+                                    {
+                                        damageDone = 0;
+                                        data.Health -= damageDone;
+                                        sentence = sentence + $"\n\n ... \n\n { data.CurrentEnemy.Name} missed! You have {data.Health} HP!";
+                                    }
+                                    else
+                                    {
+                                        data.Health -= damageDone;
+                                        sentence = sentence + $"\n\n ... \n\n {data.CurrentEnemy.Name} hit you and dealt {damageDone} damage! You now have {data.Health} HP!";
+                                    }
+
+                                    if (r.Next(0, 10) <= data.CurrentEnemy.StunChance && damageDone != 0)
+                                    {
+                                        sentence = sentence + $" You were stunned for {data.CurrentEnemy.StunAmount} turns!";
+                                        data.StunLeft = data.CurrentEnemy.StunAmount;
+                                    }
+
+                                    if (data.StunLeft > 0)
+                                        sentence = sentence + $"\n\n{data.StunLeft} turns until stun wears off!";
+
+                                    if (data.Health <= 0)
+                                    {
+                                        sentence = sentence + $"You died! You got [0] score!";
+                                        data.InGame = false;
+                                        SaveData();
+                                        return;
+                                    }
+                                }
+                            }
+                            else
+                                data.CurrentEnemy.StunLeft--;
+
+                            SaveData();
+
+                            await Context.Channel.SendMessageAsync(sentence);
+
+                            break;
+
+                        case "item":
+                            break;
+
+                        case "check":
+                            sentence = sentence + $"The {data.CurrentEnemy.Name} has {data.CurrentEnemy.Health} HP left.";
+
+                            if (data.CurrentEnemy.StunLeft > 0)
+                                sentence = sentence + $" It has {data.CurrentEnemy.StunLeft} turns left until the stun wears off.";
+
+                            await Context.Channel.SendMessageAsync(sentence);
+                            break;
+
+                        case "status":
+                            sentence = sentence + $"You currently have `{data.Health}` HP and have the {data.EquippedWeapon.Name} [Damage: {data.EquippedWeapon.Damage}] equipped.";
+                            await Context.Channel.SendMessageAsync(sentence);
+
+                            break;
+                    }
+                }
+                else
+                {
+                    sentence = sentence + $"You are fighting a `{data.CurrentEnemy.Name}` with `{data.CurrentEnemy.Health}` HP.\n\n**Options:** | Attack | Item | Check | Status |";
+                    await Context.Channel.SendMessageAsync(sentence);
+                }
+
 
             }
         }
@@ -560,10 +776,12 @@ namespace Mad_Bot_Discord
         {
             if (data.Rooms.ContainsKey(Coordinates.CoordsToString(coords))) return data.Rooms[Coordinates.CoordsToString(coords)];
 
+            bool BossAvailable = (data.Rooms.Count > 14) ? true : false;
+
             DungeonRoom currentRoom = data.CurrentRoom;
 
             Array values = Enum.GetValues(typeof(RoomType));
-            RoomType randomType = (RoomType)values.GetValue(r.Next(values.Length));
+            RoomType randomType = (RoomType)values.GetValue(r.Next((BossAvailable) ? values.Length : values.Length - 1));
 
             CanDirection canDir = new CanDirection();
 
@@ -571,6 +789,8 @@ namespace Mad_Bot_Discord
             DungeonRoom roomL = null;
             DungeonRoom roomF = null;
             DungeonRoom roomB = null;
+
+            
 
             List<Direction> rDoors = new List<Direction>();
 
@@ -824,8 +1044,31 @@ namespace Mad_Bot_Discord
 
             return sword;
         }
+
+        // Randomly generates an enemy then return it.
+        public Enemy EnemyGenerator()
+        {
+            bool willStun = false;
+            if (r.Next(0, 3) == 0)
+                willStun = true;
+
+            Enemy enemy = new Enemy()
+            {
+                Accuracy = r.Next(7) + r.Next(-4, 6),
+                Damage = r.Next(15) + r.Next(-10, 11),
+                Health = r.Next(2,11),
+                StunAmount = r.Next(0, 4),
+                StunChance = 0,
+                StunLeft = 0,
+                Name = "Placeholder Man"
+            };
+
+            if (willStun) enemy.StunChance = r.Next(0, 8);
+
+            return enemy;
+        }
     }
-    public enum RoomType { Loot, Boss, Enemy, Empty };
+    public enum RoomType { Empty, Loot, Enemy, Boss };
 
     public enum Direction { Front, Back, Left, Right };
     // Add staff and bow later.
@@ -1010,12 +1253,16 @@ namespace Mad_Bot_Discord
 
     public class Enemy
     {
-        string Name { get; set; } = null;
-        double Health { get; set; } = 0;
-        double Damage { get; set; } = 0;
-        double Accuracy { get; set; } = 0;
-        double StunChance { get; set; } = 0;
-        double StunAmount { get; set; } = 0;
+        public string Name { get; set; } = "Enemy";
+        public double Health { get; set; } = 0;
+        public double Damage { get; set; } = 0;
+        public double Accuracy { get; set; } = 0;
+        public double StunChance { get; set; } = 0;
+        public int StunAmount { get; set; } = 0;
+
+        // Effects
+
+        public int StunLeft { get; set; } = 0;
     }
 
     public class Weapons
@@ -1041,8 +1288,16 @@ namespace Mad_Bot_Discord
         }
         public Dictionary<string, DungeonRoom> Rooms { get; set; } = null;
         public Weapons Inventory { get; set; } = null;
+        public dynamic EquippedWeapon { get; set; } = null;
         public bool InAFight { get; set; } = false;
         public Enemy CurrentEnemy { get; set; } = null;
+
+        // Effects
+
+        public int StunLeft { get; set; } = 0;
+
+        // 0 = players turn -- 1 = enemy's turn
+        public int WhoseTurn { get; set; } = 0;
     }
 
     public class CanDirection
