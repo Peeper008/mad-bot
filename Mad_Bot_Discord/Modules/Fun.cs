@@ -29,8 +29,7 @@ namespace Mad_Bot_Discord.Modules
 
             var embed = new EmbedBuilder();
 
-            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Choice for " + Context.User.Username,
-                $"Your choices were: `{allOptions}`", "**My Choice:**", $"I choose... `{selection}`!", Context));
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Choice for " + Context.User.Username, $"**My Choice:**\n\nI choose... `{selection}`!", Context));
 
         }
 

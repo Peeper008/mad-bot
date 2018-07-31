@@ -523,11 +523,9 @@ namespace Mad_Bot_Discord
                     }
                 }
 
-
-
                 if (data.CurrentRoom.RoomCount > 1)
                 {
-
+                    sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
                     string one = "";
                     for (int i = 0; i < data.CurrentRoom.RoomCount; i++)
                     {
@@ -548,6 +546,7 @@ namespace Mad_Bot_Discord
                 }
                 else
                 {
+                    sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
                     sentence = sentence = $"There is one room to your {data.CurrentRoom.RoomDoors[0].ToString().ToLower()}. {tutorialMessage}";
                 }
 
@@ -561,9 +560,11 @@ namespace Mad_Bot_Discord
                     switch (args[0].ToLower())
                     {
                         case "attack":
+                            bool criticalHit = (r.Next(0, 5) == 4) ? true : false;
+                            double doingDamage = (criticalHit) ? data.EquippedWeapon.Damage * (r.NextDouble() * (1.26 - 1.10) + 1.10) : data.EquippedWeapon.Damage;
+                            
 
-                            double doingDamage = (double)data.EquippedWeapon.Damage + r.Next(-1, 5); ;
-                            sentence = sentence + "You attack the " + data.CurrentEnemy.Name + " with your " + data.EquippedWeapon.Name + " dealing " + doingDamage + " damage!";
+                            sentence = (criticalHit) ? sentence + $"You attack the {data.CurrentEnemy.Name} with your {data.EquippedWeapon.Name}, it was a critical hit! You dealt {doingDamage} damage!": sentence + "You attack the " + data.CurrentEnemy.Name + " with your " + data.EquippedWeapon.Name + " dealing " + doingDamage + " damage!";
                             data.CurrentEnemy.Health -= doingDamage;
 
                             if (data.EquippedWeapon.StunChance > 0)
@@ -599,7 +600,8 @@ namespace Mad_Bot_Discord
                             {
                                 for (int i = 0; i < eTurns; i++)
                                 {
-                                    double damageDone = data.CurrentEnemy.Damage + r.Next(-3, 4);
+                                    criticalHit = (r.Next(0, 5) == 4) ? true : false;
+                                    double damageDone = (criticalHit) ? data.CurrentEnemy.Damage * (r.NextDouble() * (1.26 - 1.10) + 1.10) : data.CurrentEnemy.Damage;
                                    
                                     if (damageDone < 1)
                                     {
@@ -610,7 +612,7 @@ namespace Mad_Bot_Discord
                                     else
                                     {
                                         data.Health -= damageDone;
-                                        sentence = sentence + $"\n\n ... \n\n {data.CurrentEnemy.Name} hit you and dealt {damageDone} damage! You now have {data.Health} HP!";
+                                        sentence = (criticalHit) ? $"\n\n ... \n\n {data.CurrentEnemy.Name} hit you, it was a critical hit! It dealt {damageDone} damage! You now have {data.Health} HP." : sentence + $"\n\n ... \n\n {data.CurrentEnemy.Name} hit you and dealt {damageDone} damage! You now have {data.Health} HP!";
                                     }
 
                                     if (r.Next(0, 10) <= data.CurrentEnemy.StunChance && damageDone != 0)
