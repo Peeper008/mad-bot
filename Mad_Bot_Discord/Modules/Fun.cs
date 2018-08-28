@@ -46,6 +46,8 @@ namespace Mad_Bot_Discord.Modules
                 "**Answer:**", selection, Context));
         }
 
+        
+
         [Command("Roll")]
         public async Task Roll([Remainder] string minmax = "1|6")
         {

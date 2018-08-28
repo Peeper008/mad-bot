@@ -110,6 +110,7 @@ namespace Mad_Bot_Discord
         [Command("Dungeon"), Alias("dg")]
         public async Task Dungeon([Remainder] string options = "")
         {
+            if (Context.User.Id != 226223728076390410) return;
 
             // Tests if the save file exists.
             if (!File.Exists(savePath))

@@ -56,7 +56,7 @@ namespace Mad_Bot_Discord.Modules
                 }
             }
 
-            page = (page > Math.Ceiling((double)userAccounts.Count / 5)) ? (int) Math.Ceiling((double)userAccounts.Count / 5) : page;
+            page = (page > Math.Ceiling((double)userAccounts.Count / 5)) ? (int)Math.Ceiling((double)userAccounts.Count / 5) : page;
 
             userAccounts.Sort(delegate (UserAccount x, UserAccount y)
             {
@@ -77,10 +77,10 @@ namespace Mad_Bot_Discord.Modules
                     x.IconUrl = Context.User.GetAvatarUrl();
                 });
 
-            for (int i = page*5-5; i < userAccounts.Count; i++)
+            for (int i = page * 5 - 5; i < userAccounts.Count; i++)
             {
                 if (userAccounts[i].Name == Context.User.Username) userAccounts[i].Name = $"{userAccounts[i].Name} (You)";
-                embed.AddField($"#{i+1} - " + userAccounts[i].Name + ":", $"**XP:** {userAccounts[i].XP} \n**Level:** {userAccounts[i].LevelNumber} \n...");
+                embed.AddField($"#{i + 1} - " + userAccounts[i].Name + ":", $"**XP:** {userAccounts[i].XP} \n**Level:** {userAccounts[i].LevelNumber} \n...");
 
                 if (i > page * 5 - 2) break;
             }

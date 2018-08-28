@@ -172,6 +172,7 @@
     <Compile Include="Global.cs" />
     <Compile Include="Modules\Battle.cs" />
     <Compile Include="Modules\Fun.cs" />
+    <Compile Include="Modules\Gungeon.cs" />
     <Compile Include="Modules\Management.cs" />
     <Compile Include="Modules\Misc.cs" />
     <Compile Include="Modules\UserStats.cs" />
@@ -180,9 +181,13 @@
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Mad_Bot_Discord_TemporaryKey.pfx" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="SystemLang\8ballAnswers.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -194,6 +199,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="SystemLang\dgattacks.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="SystemLang\gungeonItems.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -208,6 +216,10 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="SystemLang\allGungeonGuns.txt" />
+    <Content Include="SystemLang\allGungeonItems.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
