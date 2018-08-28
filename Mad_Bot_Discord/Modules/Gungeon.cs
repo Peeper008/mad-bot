@@ -147,6 +147,7 @@ namespace Mad_Bot_Discord.Modules
         static List<string> guns = str[0].ToList();
         static List<string> activeItems = str[1].ToList();
         static List<string> passiveItems = str[2].ToList();
+        static List<string> bulletMods = str[3].ToList();
 
 
         [Command("gungeon"), Alias("etg")]
@@ -188,6 +189,19 @@ namespace Mad_Bot_Discord.Modules
                                 await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
                                     "Random Gungeon Gun", "**Random Gun: **" + GetGun(), Context));
                                 return;
+                            }
+
+                            if (args[1] == "bullet")
+                            {
+                                if (args.Length > 2)
+                                {
+                                    if (args[2] == "modifier" || args[2] == "modifiers" || args[2] == "mod" || args[2] == "mods")
+                                    {
+                                        await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
+                                            "Random Gungeon Bullet Mod", "**Random Mod: **" + GetBulletMod(), Context));
+                                        return;
+                                    }
+                                }
                             }
                         }
 
@@ -444,6 +458,11 @@ namespace Mad_Bot_Discord.Modules
         private string GetGun()
         {
             return guns[r.Next(guns.Count)].Replace('_', ' ');
+        }
+        
+        private string GetBulletMod()
+        {
+            return bulletMods[r.Next(bulletMods.Count)].Replace('_', ' ');
         }
 
         /// <summary>
