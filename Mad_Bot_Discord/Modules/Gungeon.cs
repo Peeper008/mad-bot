@@ -7,14 +7,15 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Abot.Crawler;
+using Abot.Poco;
 
 namespace Mad_Bot_Discord.Modules
 {
     public class Gungeon : ModuleBase<SocketCommandContext>
     {
         private Random r = new Random();
-
-
+        PoliteWebCrawler infoCrawler = new PoliteWebCrawler();
 
         public enum Characters
         {
@@ -51,6 +52,7 @@ namespace Mad_Bot_Discord.Modules
             Get_Full_Heart,
             Get_One_Key,
             Get_One_Armor,
+            Get_One_Blank
            
         }
 
@@ -141,6 +143,17 @@ namespace Mad_Bot_Discord.Modules
             Turbo_Blessed_Normal
         }
 
+        Gungeon()
+        {
+
+            infoCrawler.PageCrawlStartingAsync += crawler_ProcessPageCrawlStarting;
+            infoCrawler.PageCrawlCompletedAsync += crawler_ProcessPageCrawlCompleted;
+            infoCrawler.PageLinksCrawlDisallowedAsync += crawler_PageLinksCrawlDisallowed;
+            infoCrawler.PageCrawlDisallowedAsync += crawler_PageCrawlDisallowed;
+
+        }
+        
+
         static string itemsRaw = File.ReadAllText("SystemLang/gungeonItems.json");
         static List<List<string>> str = (List<List<string>>)JsonConvert.DeserializeObject(itemsRaw, typeof(List<List<string>>));
 
@@ -153,60 +166,78 @@ namespace Mad_Bot_Discord.Modules
         [Command("gungeon"), Alias("etg")]
         public async Task EnterTheGungeon([Remainder] string initialArgs = "")
         {
-
+            
+            
             if (initialArgs != "")
             {
                 string[] args = initialArgs.Split(' ');
                 if (args.Length > 0)
                 {
-                    if (args[0] == "random" || args[0] == "randomize")
+                    switch (args[0])
                     {
-                        if (args.Length > 1)
-                        {
-                            if (args[1] ==  "character")
+                        case "random":
+                        case "randomize":
+                            if (args.Length > 1)
                             {
-                                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
-                                    "Random Gungeon Character", "**Random Character: **" + GetCharacters(), Context));
-                                return;
-                            }
-
-                            if (args[1] == "passive")
-                            {
-                                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
-                                    "Random Gungeon Passive Item", "**Random Passive Item: **" + GetPassiveItem(), Context));
-                                return;
-                            }
-
-                            if (args[1] == "active")
-                            {
-                                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
-                                    "Random Gungeon Active Item", "**Random Active Item: **" + GetActiveItem(), Context));
-                                return;
-                            }
-
-                            if (args[1] == "gun")
-                            {
-                                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
-                                    "Random Gungeon Gun", "**Random Gun: **" + GetGun(), Context));
-                                return;
-                            }
-
-                            if (args[1] == "bullet")
-                            {
-                                if (args.Length > 2)
+                                // Random Items 
+                                switch (args[1])
                                 {
-                                    if (args[2] == "modifier" || args[2] == "modifiers" || args[2] == "mod" || args[2] == "mods")
-                                    {
+                                    case "character":
                                         await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
-                                            "Random Gungeon Bullet Mod", "**Random Mod: **" + GetBulletMod(), Context));
+                                            "Random Gungeon Character", "**Random Character: **" + GetCharacters(), Context));
                                         return;
-                                    }
+
+                                    case "passive":
+                                        await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
+                                            "Random Gungeon Passive Item", "**Random Passive Item: **" + GetPassiveItem(), Context));
+                                        return;
+
+                                    case "active":
+                                        await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
+                                            "Random Gungeon Active Item", "**Random Active Item: **" + GetActiveItem(), Context));
+                                        return;
+
+                                    case "gun":
+                                        await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
+                                            "Random Gungeon Gun", "**Random Gun: **" + GetGun(), Context));
+                                        return;
+
+                                    case "bullet":
+                                        if (args.Length > 2)
+                                        {
+                                            if (args[2] == "modifier" || args[2] == "modifiers" || args[2] == "mod" || args[2] == "mods")
+                                            {
+                                                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
+                                                    "Random Gungeon Bullet Mod", "**Random Mod: **" + GetBulletMod(), Context));
+                                                return;
+                                            }
+                                        }
+                                        break;
                                 }
+                                // Random Items
                             }
-                        }
+                            break;
 
+                        case "get":
+                        case "info":
+                            if (args.Length > 1)
+                            {
+                                CrawlResult result = infoCrawler.Crawl(new Uri("https://enterthegungeon.gamepedia.com/Casey"));
+                                
+                                if (result.ErrorOccurred)
+                                {
+                                    Console.WriteLine("Crawl of {0} completed with error: {1}", result.RootUri.AbsoluteUri, result.ErrorException.Message);
+                                    return;
+                                }
+                                else
+                                    Console.WriteLine("Crawl of {0} completed without error.", result.RootUri.AbsoluteUri);
 
+                                return;
+                            }
+                            break;
                     }
+
+
                 }
             }
 
@@ -447,22 +478,22 @@ namespace Mad_Bot_Discord.Modules
 
         private string GetPassiveItem()
         {
-            return passiveItems[r.Next(passiveItems.Count)].Replace('_', ' ');
+            return TurnStringIntoRandString(passiveItems[r.Next(passiveItems.Count)]).Replace('_', ' ');
         }
 
         private string GetActiveItem()
         {
-            return activeItems[r.Next(activeItems.Count)].Replace('_', ' ');
+            return TurnStringIntoRandString(activeItems[r.Next(activeItems.Count)]).Replace('_', ' ');
         }
 
         private string GetGun()
         {
-            return guns[r.Next(guns.Count)].Replace('_', ' ');
+            return TurnStringIntoRandString(guns[r.Next(guns.Count)]).Replace('_', ' ');
         }
         
         private string GetBulletMod()
         {
-            return bulletMods[r.Next(bulletMods.Count)].Replace('_', ' ');
+            return TurnStringIntoRandString(bulletMods[r.Next(bulletMods.Count)]).Replace('_', ' ');
         }
 
         /// <summary>
@@ -473,7 +504,7 @@ namespace Mad_Bot_Discord.Modules
         /// <param name="str"> The string you want converted </param>
         private string TurnStringIntoRandString(string str)
         {
-            if (str.StartsWith("RAND"))
+            if (str.Contains("RAND"))
             {
                 int firstInt = 0;
                 int.TryParse(str.Substring(4, 1), out firstInt);
@@ -490,11 +521,49 @@ namespace Mad_Bot_Discord.Modules
             else return str;
         }
 
-        public class Event
+
+
+        public void crawler_PageCrawlDisallowed(object sender, PageCrawlDisallowedArgs e)
         {
-            public EnumEvents Name { get; set; }
-            public GiveTake GiveOrTake { get; set; }
-            public ItemType TypeOfItem { get; set; }
+            PageToCrawl pageToCrawl = e.PageToCrawl;
+            Console.WriteLine("Did not crawl page {0} due to {1}", pageToCrawl.Uri.AbsoluteUri, e.DisallowedReason);
+        }
+
+        public void crawler_PageLinksCrawlDisallowed(object sender, PageLinksCrawlDisallowedArgs e)
+        {
+            CrawledPage crawledPage = e.CrawledPage;
+            Console.WriteLine("Did not crawl the links on page {0} due to {1}", crawledPage.Uri.AbsoluteUri, e.DisallowedReason);
+        }
+
+        public void crawler_ProcessPageCrawlCompleted(object sender, PageCrawlCompletedArgs e)
+        {
+            CrawledPage crawledPage = e.CrawledPage;
+            
+
+            if (crawledPage.WebException != null || crawledPage.HttpWebResponse.StatusCode != System.Net.HttpStatusCode.OK)
+                Console.WriteLine("Crawl of page failed {0}", crawledPage.Uri.AbsoluteUri);
+            else
+                Console.WriteLine("Crawl of page succeeded {0}", crawledPage.Uri.AbsoluteUri);
+
+            if (string.IsNullOrEmpty(crawledPage.Content.Text))
+                Console.WriteLine("Page had no content {0}", crawledPage.Uri.AbsoluteUri);
+
+            
+
+            var htmlAgilityPackDocument = crawledPage.HtmlDocument; // HTML Agility Pack Parser
+            
+            var angleSharpHtmlDocument = crawledPage.AngleSharpHtmlDocument; // AngleSharp Parser
+
+            Console.WriteLine("Title: " + angleSharpHtmlDocument.Title);
+
+        }
+
+        public void crawler_ProcessPageCrawlStarting(object sender, PageCrawlStartingArgs e)
+        {
+            // Gets the page it's going to crawl and logs it
+            PageToCrawl pageToCrawl = e.PageToCrawl;
+            Console.WriteLine("About to crawl link {0} which was found on page {1}",
+                pageToCrawl.Uri.AbsoluteUri, pageToCrawl.ParentUri.AbsoluteUri);
         }
 
     }

@@ -5,6 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using Abot.Crawler;
+using Abot.Poco;
+using System.Net;
+using Mad_Bot_Discord.Core.UserAccounts;
 
 namespace Mad_Bot_Discord
 {
@@ -12,16 +16,16 @@ namespace Mad_Bot_Discord
     {
         static private DiscordSocketClient _client;
         private CommandHandler _handler;
+        static public PoliteWebCrawler crawler = new PoliteWebCrawler();
 
         private static void Main()
         => new Program().StartAsync().GetAwaiter().GetResult();
 
-
-
-
         // Startup Sequence
         public async Task StartAsync()
         {
+
+
             // Makes sure the config file is filled out before continuing.
             if (string.IsNullOrEmpty(Config.bot.token) || string.IsNullOrEmpty(Config.bot.cmdPrefix))
             {
@@ -29,6 +33,11 @@ namespace Mad_Bot_Discord
                 Console.ReadLine();
             }
 
+
+            crawler.PageCrawlStartingAsync += crawler_ProcessPageCrawlStarting;
+            crawler.PageCrawlCompletedAsync += crawler_ProcessPageCrawlCompleted;
+            crawler.PageCrawlDisallowedAsync += crawler_PageCrawlDisallowed;
+            crawler.PageLinksCrawlDisallowedAsync += crawler_PageLinksCrawlDisallowed;
 
             // Sets the LogLevel to Verbose.
             _client = new DiscordSocketClient(new DiscordSocketConfig
@@ -64,6 +73,43 @@ namespace Mad_Bot_Discord
 
             await Task.Delay(-1);
             
+        }
+
+
+        private void crawler_PageCrawlDisallowed(object sender, PageCrawlDisallowedArgs e)
+        {
+            PageToCrawl pageToCrawl = e.PageToCrawl;
+            Console.WriteLine("Did not crawl page {0} due to {1}", pageToCrawl.Uri.AbsoluteUri, e.DisallowedReason);
+        }
+
+        private void crawler_PageLinksCrawlDisallowed(object sender, PageLinksCrawlDisallowedArgs e)
+        {
+            CrawledPage crawledPage = e.CrawledPage;
+            Console.WriteLine("Did not crawl the links on page {0} due to {1}", crawledPage.Uri.AbsoluteUri, e.DisallowedReason);
+        }
+
+        private void crawler_ProcessPageCrawlCompleted(object sender, PageCrawlCompletedArgs e)
+        {
+            CrawledPage crawledPage = e.CrawledPage;
+
+            if (crawledPage.WebException != null || crawledPage.HttpWebResponse.StatusCode != HttpStatusCode.OK)
+                Console.WriteLine("Crawl of page failed {0}", crawledPage.Uri.AbsoluteUri);
+            else
+                Console.WriteLine("Crawl of page succeeded {0}", crawledPage.Uri.AbsoluteUri);
+
+            if (string.IsNullOrEmpty(crawledPage.Content.Text))
+                Console.WriteLine("Page had no content {0}", crawledPage.Uri.AbsoluteUri);
+
+            var htmlAgilityPackDocument = crawledPage.HtmlDocument; // HTML Agility Pack Parser
+            var angleSharpHtmlDocument = crawledPage.AngleSharpHtmlDocument; // AngleSharp Parser
+        }
+
+        private void crawler_ProcessPageCrawlStarting(object sender, PageCrawlStartingArgs e)
+        {
+            // Gets the page it's going to crawl and logs it
+            PageToCrawl pageToCrawl = e.PageToCrawl;
+            Console.WriteLine("About to crawl link {0} which was found on page {1}", 
+                pageToCrawl.Uri.AbsoluteUri, pageToCrawl.ParentUri.AbsoluteUri);
         }
 
 

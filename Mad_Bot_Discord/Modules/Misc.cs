@@ -57,5 +57,55 @@ namespace Mad_Bot_Discord.Modules
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Prefix for " + Context.User.Username, $"The prefix is now [`{config.cmdPrefix}`]. The previous prefix was [`{oldPrefix}`]", Context));
             return;
         }
+
+        [Command("Remindme"), Alias("Remind", "Rm")]
+        public async Task Remindme(string amount = "5", string timeType = "minutes", [Remainder] string message = "")
+        {
+            if (int.TryParse(amount, out int amountOfTime))
+            {
+                int multiplier = 1000;
+
+                switch (timeType)
+                {
+                    case "millisecond":
+                    case "milliseconds":
+                    case "millis":
+                    case "milli":
+                        break;
+
+                    case "second":
+                    case "seconds":
+                    case "sec":
+                    case "secs":
+                        multiplier = 1000;
+                        break;
+
+                    case "minute":
+                    case "minutes":
+                    case "min":
+                    case "mins":
+                        multiplier = 60000;
+                        break;
+                }
+
+                if (message == "") message = "Reminder for " + Context.User.Username;
+
+                var timer = new System.Threading.Timer(async (e) =>
+                {
+                    await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
+                        "RemindMe for " + Context.User.Username, message + "\n" + Context.User.Mention, Context));
+                    return;
+
+                }, null, amountOfTime * multiplier, System.Threading.Timeout.Infinite);
+
+                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
+                    "RemindMe for " + Context.User.Username, $"Reminder set. It will go off in `{amountOfTime} {timeType.Substring(0, 3)}`.", Context));
+                return;
+            }
+
+            await Context.Channel.SendMessageAsync("'", embed: Utilities.EasyEmbed(
+                "RemindMe Failed", "The amount of time needs to be a number!", Context));
+            return;
+        }
     }
 }
