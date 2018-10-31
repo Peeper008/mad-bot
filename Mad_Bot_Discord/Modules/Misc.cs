@@ -58,7 +58,7 @@ namespace Mad_Bot_Discord.Modules
             return;
         }
 
-        [Command("Remindme"), Alias("Remind", "Rm")]
+        [Command("Remindme")]
         public async Task Remindme(string amount = "5", string timeType = "minutes", [Remainder] string message = "")
         {
             if (int.TryParse(amount, out int amountOfTime))
@@ -98,8 +98,7 @@ namespace Mad_Bot_Discord.Modules
 
                 }, null, amountOfTime * multiplier, System.Threading.Timeout.Infinite);
 
-                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed(
-                    "RemindMe for " + Context.User.Username, $"Reminder set. It will go off in `{amountOfTime} {timeType.Substring(0, 3)}`.", Context));
+                await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("RemindMe for " + Context.User.Username, $"Reminder set. It will go off in `{amountOfTime} {timeType.Substring(0, 3)}`.", Context));
                 return;
             }
 

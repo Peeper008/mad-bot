@@ -7,6 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Mad_Bot_Discord.Core.UserAccounts;
 using Discord.WebSocket;
+using System.IO;
+using System.Threading;
+using Discord.Rest;
 
 namespace Mad_Bot_Discord.Modules
 {
@@ -228,7 +231,7 @@ namespace Mad_Bot_Discord.Modules
         public async Task KickUser(string memb1 = "", [Remainder] string reason = "No reason provided.")
         {
             await Context.Guild.DownloadUsersAsync();
-
+            
             SocketGuildUser user = (SocketGuildUser)Context.Message.MentionedUsers.FirstOrDefault();
 
 
@@ -360,5 +363,186 @@ namespace Mad_Bot_Discord.Modules
 
             await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("FixAll for " + Context.User.Username, "Everyone's ranks have been fixed.", Context));
         }
+
+        [Command("Poll")]
+        public async Task Poll([Remainder] string question)
+        {
+            SocketGuildUser user = (SocketGuildUser) Context.Message.Author;
+
+            await Context.Channel.SendMessageAsync("", embed: Utilities.EasyEmbed("New Poll", $"Okay, the poll will be: `{question}`.\n\nHow long would" +
+                $" you like the poll to last? (answer in seconds)\nAnswer within 10 seconds otherwise the poll will not be created.", Context));
+
+            ulong messageId = Context.Message.Id;
+            ulong userId = user.Id;
+            SocketTextChannel channel = (SocketTextChannel) Context.Channel;
+            
+            bool finished = false;
+
+            IUserMessage answer = null;
+
+            int i = 0;
+            int amount = 5;
+            Timer timer = new Timer(async x =>
+            {
+                var messages = await channel.GetMessagesAsync(messageId, Discord.Direction.After, amount).Flatten();
+                foreach (IUserMessage me in messages)
+                {
+                    if (me.Author.Id == userId)
+                    {
+                        answer = me;
+                        finished = true;
+                    }
+                }
+                i++;
+                amount += 5;
+            }, null, 0, 1000);
+
+            while (true)
+            {
+                if (finished)
+                {
+                    timer.Dispose();
+                    break;
+                }
+
+                else if (i > 10)
+                {
+                    timer.Dispose();
+                    await channel.SendMessageAsync("Poll dismissed.");
+                    return;
+                }
+            }
+
+            if (!int.TryParse(answer.Content, out int time))
+            {
+                await channel.SendMessageAsync("You must send an **integer.**\nPoll dismissed.");
+                return;
+            }
+
+            await channel.SendMessageAsync("", embed:Utilities.EasyEmbed("New Poll by " + Context.User.Username, "Perfect. One last thing:\nWhat " +
+                "would you like the answers to be? (Answers are separated by the '|' (pipe, or line) symbol)" +
+                "\nA maximum of 6 answers can be used.\n\nExample: answer 1|answer 2|answer 3. Answer within 20 seconds otherwise the poll will be dismissed.", Context));
+
+            i = 0;
+            amount = 5;
+            finished = false;
+
+            messageId = answer.Id;
+            answer = null;
+
+            timer = new Timer(async x =>
+            {
+                var messages = await channel.GetMessagesAsync(messageId, Discord.Direction.After, amount).Flatten();
+                foreach (IUserMessage mes in messages)
+                {
+                    if (mes.Author.Id == userId)
+                    {
+                        answer = mes;
+                        finished = true;
+                    }
+                }
+                i++;
+                amount += 5;
+            }, null, 0, 1000);
+
+            while (true)
+            {
+                if (finished)
+                {
+                    timer.Dispose();
+                    break;
+                }
+
+                else if (i > 20)
+                {
+                    timer.Dispose();
+                    await channel.SendMessageAsync("Poll dismissed.");
+                    return;
+                }
+            }
+
+            string[] finalAnswers = answer.Content.Split('|');
+
+            if (finalAnswers.Length > 6)
+            {
+                await channel.SendMessageAsync("There must be less than 6 answers.\nPoll dismissed.");
+                return;
+            }
+
+            string a = $"***{question}*** - {Context.User.Username}\n\n";
+
+            int c = 0;
+            foreach (string f in finalAnswers)
+            {
+                c++;
+                a = a + c + ": " + f + "\n";
+            }
+
+            a = a + $"\n\nThis poll will end in {time} seconds. (After all reactions have been added)\nAnswer using the reactions below! (It can take up to 20 seconds for all reactions to be added. Please be patient!)";
+
+            IUserMessage m = await channel.SendMessageAsync("", embed:Utilities.EasyEmbed("Poll By " + Context.User.Username, a, Context));
+
+            Emoji[] numberedEmojis =
+            {
+                new Emoji("1\u20e3"),
+                new Emoji("2\u20e3"),
+                new Emoji("3\u20e3"),
+                new Emoji("4\u20e3"),
+                new Emoji("5\u20e3"),
+                new Emoji("6\u20e3"),
+            };
+
+            int indexEnd = finalAnswers.Length;
+            int index = 0;
+            Timer t = new Timer(method =>
+            {
+                m.AddReactionAsync(numberedEmojis[index]);
+                index++;
+            }, null, 0, 3000);
+            
+            while (true)
+            {
+                if (index >= indexEnd)
+                {
+                    t.Dispose();
+                    break;
+                }
+            }
+
+            bool timerEnded = false;
+            Timer finalTimer = new Timer(async methodddddd =>
+            {
+
+                ulong reactionMessageId = m.Id;
+                IUserMessage reactionMessage = (IUserMessage)await channel.GetMessageAsync(reactionMessageId);
+                List<int> reactionVotes = new List<int>();
+                string endingResults = "";
+                int reactionIndex = 0;
+
+                foreach(var r in reactionMessage.Reactions)
+                {
+                    reactionVotes.Add(r.Value.ReactionCount - 1);
+                    endingResults = endingResults + finalAnswers[reactionIndex] + ": " + reactionVotes[reactionIndex] + " votes.\n";
+                    reactionIndex++;
+                }
+
+                await channel.SendMessageAsync("", embed: Utilities.EasyEmbed("Poll Ended", $"The poll ***{question}*** by {Context.User.Username} has ended! The results:\n\n{endingResults}" +
+                    $"", Context));
+                timerEnded = true;
+            }, null, time * 1000, Timeout.Infinite);
+
+            while (!timerEnded)
+            {
+
+            }
+
+            finalTimer.Dispose();
+            return;
+
+
+
+        }
+
+        
     }
 }

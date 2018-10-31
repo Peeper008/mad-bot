@@ -1,6 +1,7 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 using Mad_Bot_Discord.Core.UserAccounts;
+using Mad_Bot_Discord.Modules.DungeonGame;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -35,7 +36,7 @@ namespace Mad_Bot_Discord
     /// 
     /// random events pls
     /// 
-    /// To Do Next: Add Dictionaries for everything.
+    /// To Do Next: 
     /// Damage System for weapons
     /// Random items on ground
     /// Custom Player Icon (map)
@@ -52,12 +53,16 @@ namespace Mad_Bot_Discord
 
     public class DungeonGame : ModuleBase<SocketCommandContext>
     {
+        
+        // Tutorial message after each command to tell you what you can do.
         public string tutorialMessage = $"Reply with `{Config.bot.cmdPrefix}dg <direction>` to move, `{Config.bot.cmdPrefix}dg map` to view the map" +
             $", `{Config.bot.cmdPrefix}dg inv` to view your inventory, `{Config.bot.cmdPrefix}dg types` to view what room types do/appear like on the map, " +
             $"or `{Config.bot.cmdPrefix}dg leave` to leave the dungeon and finalize your score.";
 
         private static List<SaveData> saves;
         static string savePath = "Resources/dgsaves.json";
+
+        #region Data Handling
 
         void SaveData()
         {
@@ -76,13 +81,18 @@ namespace Mad_Bot_Discord
         void RefreshData()
         {
             string json = File.ReadAllText(savePath);
-            saves = JsonConvert.DeserializeObject<List<SaveData>>(json);
+
+            JsonConverter[] converters = { new WeaponConverter() };
+            saves = JsonConvert.DeserializeObject<List<SaveData>>(json, new JsonSerializerSettings() { Converters = converters });
         }
         SaveData CreateSaveData(ulong id)
         {
             SocketGuildUser user = (SocketGuildUser)Context.User;
 
-            var newSave = new SaveData() { User = UserAccounts.GetAccount(user) };
+            var newSave = new SaveData() { User = UserAccounts.GetAccount(user), Player = new Player() };
+            newSave.Player.Name = user.Username;
+            newSave.Player.SaveData = newSave;
+
             saves.Add(newSave);
             SaveData();
             return newSave;
@@ -103,32 +113,37 @@ namespace Mad_Bot_Discord
         {
             return GetOrCreateSaveData(id);
         }
-        // --- Data saving and loading.
+
+        #endregion Data Handling
 
         Random r = new Random();
 
         [Command("Dungeon"), Alias("dg")]
         public async Task Dungeon([Remainder] string options = "")
         {
+            // Currently only works for me.
             if (Context.User.Id != 226223728076390410) return;
 
-            // Tests if the save file exists.
+            #region Save File Interaction
             if (!File.Exists(savePath))
             {
                 // If it doesn't, create it.
-                UserAccount bot = UserAccounts.GetAccount(Context.Client.CurrentUser);
+                UserAccount user = UserAccounts.GetAccount(Context.User);
 
-                saves = new List<SaveData> { new SaveData { User = bot } };
+                saves = new List<SaveData> { new SaveData { User = user } };
                 string json = JsonConvert.SerializeObject(saves, Formatting.Indented);
                 File.WriteAllText(savePath, json);
             }
             else
             {
+                JsonConverter[] converters = { new WeaponConverter() };
+
                 // If it does, read it and save it to a variable.
                 string json = File.ReadAllText(savePath);
                 
-                saves = JsonConvert.DeserializeObject<List<SaveData>>(json);
+                saves = JsonConvert.DeserializeObject<List<SaveData>>(json, new JsonSerializerSettings() { Converters = converters });
             }
+            #endregion Save File Interaction
 
             // Gets any arguments provided.
             string[] args = { };
@@ -136,6 +151,9 @@ namespace Mad_Bot_Discord
 
             // Gets the users save data.
             SaveData data = GetData(Context.User.Id);
+
+            // Gets the player
+            Player player = data.Player;
 
             // Starts a variable that stores what mb will say to you.
             string sentence = "";
@@ -147,18 +165,18 @@ namespace Mad_Bot_Discord
                 // Creates a starting sword.
                 Sword startingSword = new Sword()
                 {
-                    BladeLength = Sword_BladeLength[0],
-                    BladeThickness = Sword_BladeThickness[0],
-                    BladeType = Sword_BladeType[1],
-                    HiltGrip = Sword_HiltGrip[0],
-                    HiltSize = Sword_HiltSize[0],
-                    HiltType = Sword_HiltType[1],
-                    WeightType = Sword_WeightType[0],
-                    Name = Sword_BladeType[1].NamePart + Sword_BladeThickness[0].NamePart + Sword_HiltType[1].NamePart + Sword_HiltSize[0].NamePart
+                    BladeLength = DungeonWeaponParts.Sword_BladeLength[0],
+                    BladeThickness = DungeonWeaponParts.Sword_BladeThickness[0],
+                    BladeType = DungeonWeaponParts.Sword_BladeType[1],
+                    HiltGrip = DungeonWeaponParts.Sword_HiltGrip[0],
+                    HiltSize = DungeonWeaponParts.Sword_HiltSize[0],
+                    HiltType = DungeonWeaponParts.Sword_HiltType[1],
+                    WeightType = DungeonWeaponParts.Sword_WeightType[0],
+                    Name = DungeonWeaponParts.Sword_BladeType[1].NamePart + DungeonWeaponParts.Sword_BladeThickness[0].NamePart + DungeonWeaponParts.Sword_HiltType[1].NamePart + DungeonWeaponParts.Sword_HiltSize[0].NamePart
                 };
 
                 // Sets the equipped weapon to the starting sword.
-                data.EquippedWeapon = startingSword;
+                player.EquippedWeapon = startingSword;
 
                 // Creates a starting dungeon.
                 DungeonRoom startingRoom = new DungeonRoom
@@ -187,34 +205,36 @@ namespace Mad_Bot_Discord
                 data.InGame = true;
 
                 // Sets up the player's inventory.
-                data.Inventory = new Weapons { Swords = new List<Sword> { startingSword }, Guns = new List<Gun> { } };
+                player.Inventory = new List<Weapon> { startingSword };
                 
                 // Makes sure they arent in a fight.
-                data.InAFight = false;
+                data.InFight = false;
 
                 // Saves all that new data.
                 SaveData();
             }
 
-            // Tests if the player is in a fight.
-            if (!data.InAFight)
+            #region Main
+            if (!data.InFight)
             {
                 if (args.Length > 0)
                 {
                     switch (args[0].ToLower())
                     {
+                        #region directions
+
                         case "left":
+                            #region left
                             if (data.CurrentRoom.RoomDoors.Contains(Direction.Left))
                             {
                                 
 
                                 data.CurrentRoom = RoomGenerator(new Coordinates { X = data.CurrentRoom.Coordinates.X - 1, Y = data.CurrentRoom.Coordinates.Y }, data);
-                                sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
 
                                 if (data.CurrentRoom.Type == RoomType.Enemy)
                                 {
                                     data.CurrentEnemy = EnemyGenerator();
-                                    data.InAFight = true;
+                                    data.InFight = true;
 
                                     sentence = sentence + "You walk into the room to the left of you and are attacked by a " + data.CurrentEnemy.Name + $"! Type `{Config.bot.cmdPrefix}dg` to start.";
                                     data.Rooms.Add(Coordinates.CoordsToString(data.CurrentRoom.Coordinates), data.CurrentRoom);
@@ -243,17 +263,18 @@ namespace Mad_Bot_Discord
                                 sentence = sentence + "You cannot do that.\n\n";
                             }
                             break;
+                            #endregion left
 
                         case "right":
+                            #region right
                             if (data.CurrentRoom.RoomDoors.Contains(Direction.Right))
                             {
                                 data.CurrentRoom = RoomGenerator(new Coordinates { X = data.CurrentRoom.Coordinates.X + 1, Y = data.CurrentRoom.Coordinates.Y }, data);
-                                sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
 
                                 if (data.CurrentRoom.Type == RoomType.Enemy)
                                 {
                                     data.CurrentEnemy = EnemyGenerator();
-                                    data.InAFight = true;
+                                    data.InFight = true;
 
                                     sentence = sentence + "You walk into the room to the right of you and are attacked by a " + data.CurrentEnemy.Name + $"! Type `{Config.bot.cmdPrefix}dg` to start.";
                                     data.Rooms.Add(Coordinates.CoordsToString(data.CurrentRoom.Coordinates), data.CurrentRoom);
@@ -281,20 +302,21 @@ namespace Mad_Bot_Discord
                                 sentence = sentence + "You cannot do that.\n\n";
                             }
                             break;
+                         #endregion right
 
                         case "front":
                         case "up":
                         case "forward":
                         case "forwards":
+                            #region front
                             if (data.CurrentRoom.RoomDoors.Contains(Direction.Front))
                             {
                                 data.CurrentRoom = RoomGenerator(new Coordinates { X = data.CurrentRoom.Coordinates.X, Y = data.CurrentRoom.Coordinates.Y + 1 }, data);
-                                sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
 
                                 if (data.CurrentRoom.Type == RoomType.Enemy)
                                 {
                                     data.CurrentEnemy = EnemyGenerator();
-                                    data.InAFight = true;
+                                    data.InFight = true;
 
                                     sentence = sentence + "You walk into the room ahead of you and are attacked by a " + data.CurrentEnemy.Name + $"! Type `{Config.bot.cmdPrefix}dg` to start.";
                                     data.Rooms.Add(Coordinates.CoordsToString(data.CurrentRoom.Coordinates), data.CurrentRoom);
@@ -322,22 +344,23 @@ namespace Mad_Bot_Discord
                                 sentence = sentence + "You cannot do that.\n\n";
                             }
                             break;
+                            #endregion front
 
                         case "back":
                         case "down":
                         case "backward":
                         case "backwards":
+                            #region back
                             if (data.CurrentRoom.RoomDoors.Contains(Direction.Back))
                             {
                                 data.CurrentRoom = RoomGenerator(new Coordinates { X = data.CurrentRoom.Coordinates.X, Y = data.CurrentRoom.Coordinates.Y - 1}, data);
-                                sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
 
                                 if (data.CurrentRoom.Type == RoomType.Enemy)
                                 {
                                     if (!data.Rooms.ContainsKey(Coordinates.CoordsToString(data.CurrentRoom.Coordinates)))
                                     {
                                         data.CurrentEnemy = EnemyGenerator();
-                                        data.InAFight = true;
+                                        data.InFight = true;
 
                                         sentence = sentence + "You walk into the room behind you and are attacked by a " + data.CurrentEnemy.Name + $"! Type `{Config.bot.cmdPrefix}dg` to start.";
                                         data.Rooms.Add(Coordinates.CoordsToString(data.CurrentRoom.Coordinates), data.CurrentRoom);
@@ -366,9 +389,13 @@ namespace Mad_Bot_Discord
                                 sentence = sentence + "You cannot do that.\n\n ... \n\n";
                             }
                             break;
+                        #endregion back
+
+                        #endregion directions
 
                         case "map":
-                            sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
+                            #region map
+                            //sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
 
                             List<double> allX = new List<double>();
                             List<double> allY = new List<double>();
@@ -469,29 +496,42 @@ namespace Mad_Bot_Discord
                             await Context.Channel.SendMessageAsync(mp);
 
                             break;
+
+                        #endregion map
+
                         case "inv":
                         case "inventory":
-                            sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
+                            #region inventory
 
                             string tba = "Your current inventory:\n\n**Swords:** \n\n";
-                            Weapons w = data.Inventory;
+                            List<Weapon> w = data.Player.Inventory;
 
-                            if (w.Swords.Count > 0)
+                            List<Sword> swords = new List<Sword>();
+                            List<Gun> guns = new List<Gun>();
+
+                            foreach (Weapon weapon in w)
                             {
-                                foreach (Sword s in w.Swords)
+                                if (weapon.WeaponType == WeaponType.Sword) swords.Add((Sword)weapon);
+                                if (weapon.WeaponType == WeaponType.Gun) guns.Add((Gun)weapon);
+                            }
+                                                 
+
+                            if (swords.Count > 0)
+                            {
+                                foreach (Sword s in swords)
                                 {
-                                    tba = tba + s.Name + $" [Damage: {s.Damage} | Accuracy: {s.Accuracy} | Stun Chance: {s.StunChance}0% | Stun Amount: {s.StunAmount} Turns] \n";
+                                    tba = tba + s.Name + $" [Damage: {s.GetBaseDamage()} | Accuracy: {s.GetAccuracy()} | Stun Chance: {s.GetStunChance()}0% | Stun Amount: {s.GetStunAmount()} Turns] \n";
                                 }
                             }
                             else tba = tba + "None!\n";
                             tba = tba + "\n**Guns:** \n\n";
 
 
-                            if (w.Guns.Count > 0)
+                            if (guns.Count > 0)
                             {
-                                foreach (Gun g in w.Guns)
+                                foreach (Gun g in guns)
                                 {
-                                    tba = tba + g.Name + $" [Damage: {g.Damage} | Accuracy: {g.Accuracy} | Stun Chance: {g.StunChance}0% | Stun Amount: {g.StunAmount} Turns] \n";
+                                    tba = tba + g.Name + $" [Damage: {g.GetBaseDamage()} | Accuracy: {g.GetAccuracy()} | Stun Chance: {g.GetStunChance()}0% | Stun Amount: {g.GetStunAmount()} Turns] \n";
                                 }
                             }
                             else tba = tba + "None!\n";
@@ -499,10 +539,12 @@ namespace Mad_Bot_Discord
                             sentence = sentence + tba + "\n\n";
 
                             break;
+                            #endregion inventory
 
                         case "leave":
                         case "exit":
                         case "quit":
+                            #region quit
                             string[] encouragingWords = { "Wow, you", "Incredible! You", "Good job, you", "Nice work, you", "That's crazy! You", "Meh, you", "**yawn** you" };
                             string word = encouragingWords[r.Next(encouragingWords.Length)];
 
@@ -511,9 +553,9 @@ namespace Mad_Bot_Discord
                             data.InGame = false;
                             SaveData();
                             return;
+                            #endregion quit
 
                         case "types":
-                            sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
 
                             sentence = sentence + "Room Types:\n\nEmpty: An empty room. Appears as `[ ]` in the map.\nEnemy: A room that contains enemies. Appears as `[#]` in the map.\n" +
                                 "Loot: A room that gives you random loot. Appears as `[$]` in the map.\nBoss: A room that contains a boss. Appears as `[!]` in the map.\n" +
@@ -524,6 +566,7 @@ namespace Mad_Bot_Discord
                     }
                 }
 
+                // RoomCount = amount of doors in a room.
                 if (data.CurrentRoom.RoomCount > 1)
                 {
                     sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
@@ -533,12 +576,12 @@ namespace Mad_Bot_Discord
 
                         if (i == data.CurrentRoom.RoomCount - 1)
                         {
-                            one = one + ", and one to your " + data.CurrentRoom.RoomDoors[i].ToString().ToLower() + ".";
+                            one = one + ", and one to your **" + data.CurrentRoom.RoomDoors[i].ToString().ToLower() + "**.";
 
                         }
                         else
                         {
-                            one = one + ", one to your " + data.CurrentRoom.RoomDoors[i].ToString().ToLower();
+                            one = one + ", one to your **" + data.CurrentRoom.RoomDoors[i].ToString().ToLower() + "**";
 
                         }
                     }
@@ -548,7 +591,7 @@ namespace Mad_Bot_Discord
                 else
                 {
                     sentence = sentence + $"Current Room Type: [{data.CurrentRoom.Type}] \n\n";
-                    sentence = sentence = $"There is one room to your {data.CurrentRoom.RoomDoors[0].ToString().ToLower()}. {tutorialMessage}";
+                    sentence = sentence = $"There is one room to your **{data.CurrentRoom.RoomDoors[0].ToString().ToLower()}**. {tutorialMessage}";
                 }
 
                 await Context.Channel.SendMessageAsync(sentence);
@@ -561,35 +604,15 @@ namespace Mad_Bot_Discord
                     switch (args[0].ToLower())
                     {
                         case "attack":
-                            bool criticalHit = (r.Next(0, 5) == 4) ? true : false;
-                            double doingDamage = (criticalHit) ? data.EquippedWeapon.Damage * (r.NextDouble() * (1.26 - 1.10) + 1.10) : data.EquippedWeapon.Damage;
-                            
 
-                            sentence = (criticalHit) ? sentence + $"You attack the {data.CurrentEnemy.Name} with your {data.EquippedWeapon.Name}, it was a critical hit! You dealt {doingDamage} damage!": sentence + "You attack the " + data.CurrentEnemy.Name + " with your " + data.EquippedWeapon.Name + " dealing " + doingDamage + " damage!";
-                            data.CurrentEnemy.Health -= doingDamage;
-
-                            if (data.EquippedWeapon.StunChance > 0)
-                            {
-                                if (r.Next(0, 10) <= data.EquippedWeapon.StunChance)
-                                {
-                                    data.CurrentEnemy.StunLeft = data.EquippedWeapon.StunAmount + 1;
-                                    sentence = sentence + " It was stunned for " + data.EquippedWeapon.StunAmount + " turns!";
-                                }
-
-                            }
-
-                            if (data.CurrentEnemy.Health < 0) data.CurrentEnemy.Health = 0;
-
-                            sentence = sentence + "\n\n" + data.CurrentEnemy.Name + " has " + data.CurrentEnemy.Health + " HP left!";
-
-                            int eTurns = (data.StunLeft == 0) ? 1 : data.StunLeft + 1;
+                            DungeonMethods.DealDamage(data.CurrentEnemy, 5);
 
                             if (data.CurrentEnemy.Health <= 0)
                             {
                                 sentence = sentence + $"\n\nYou defeated the {data.CurrentEnemy.Name} and gained [0] gold!";
                                 data.CurrentRoom.Type = RoomType.Empty;
                                 data.Rooms[Coordinates.CoordsToString(data.CurrentRoom.Coordinates)].Type = RoomType.Empty;
-                                data.InAFight = false;
+                                data.InFight = false;
 
                                 await Context.Channel.SendMessageAsync(sentence);
 
@@ -597,45 +620,15 @@ namespace Mad_Bot_Discord
                                 return;
                             }
 
-                            if (data.CurrentEnemy.StunLeft < 1)
+                            
+
+                            if (data.Player.Health <= 0)
                             {
-                                for (int i = 0; i < eTurns; i++)
-                                {
-                                    criticalHit = (r.Next(0, 5) == 4) ? true : false;
-                                    double damageDone = (criticalHit) ? data.CurrentEnemy.Damage * (r.NextDouble() * (1.26 - 1.10) + 1.10) : data.CurrentEnemy.Damage;
-                                   
-                                    if (damageDone < 1)
-                                    {
-                                        damageDone = 0;
-                                        data.Health -= damageDone;
-                                        sentence = sentence + $"\n\n ... \n\n { data.CurrentEnemy.Name} missed! You have {data.Health} HP!";
-                                    }
-                                    else
-                                    {
-                                        data.Health -= damageDone;
-                                        sentence = (criticalHit) ? $"\n\n ... \n\n {data.CurrentEnemy.Name} hit you, it was a critical hit! It dealt {damageDone} damage! You now have {data.Health} HP." : sentence + $"\n\n ... \n\n {data.CurrentEnemy.Name} hit you and dealt {damageDone} damage! You now have {data.Health} HP!";
-                                    }
-
-                                    if (r.Next(0, 10) <= data.CurrentEnemy.StunChance && damageDone != 0)
-                                    {
-                                        sentence = sentence + $" You were stunned for {data.CurrentEnemy.StunAmount} turns!";
-                                        data.StunLeft = data.CurrentEnemy.StunAmount;
-                                    }
-
-                                    if (data.StunLeft > 0)
-                                        sentence = sentence + $"\n\n{data.StunLeft} turns until stun wears off!";
-
-                                    if (data.Health <= 0)
-                                    {
-                                        sentence = sentence + $"You died! You got [0] score!";
-                                        data.InGame = false;
-                                        SaveData();
-                                        return;
-                                    }
-                                }
+                                sentence = sentence + $"You died! You got [0] score!";
+                                data.InGame = false;
+                                SaveData();
+                                return;
                             }
-                            else
-                                data.CurrentEnemy.StunLeft--;
 
                             SaveData();
 
@@ -656,7 +649,7 @@ namespace Mad_Bot_Discord
                             break;
 
                         case "status":
-                            sentence = sentence + $"You currently have `{data.Health}` HP and have the {data.EquippedWeapon.Name} [Damage: {data.EquippedWeapon.Damage}] equipped.";
+                            sentence = sentence + $"You currently have `{player.Health}` HP and have the {player.EquippedWeapon.Name} [Damage: {player.EquippedWeapon.GetBaseDamage()}] equipped.";
                             await Context.Channel.SendMessageAsync(sentence);
 
                             break;
@@ -670,6 +663,7 @@ namespace Mad_Bot_Discord
 
 
             }
+            #endregion Main
         }
 
         /*            string weapon = $"You find a {rGun.FireType.Name} {rGun.BodyType.Name} that fires {rGun.Projectile.Name}. It is labelled *\"{rGun.Name}\"*\n" +
@@ -677,102 +671,7 @@ namespace Mad_Bot_Discord
                 $" | Stun Chance: {rGun.Projectile.StunChance}0% | Stun Amount: {rGun.Projectile.StunAmount} Rounds]";
                 */
 
-        // --- Gun
-        public enum Gun_ProjectileType { Bullet, Explosive, Primitive, Special };
-        public Dictionary<int, Attributes> Gun_FireType = new Dictionary<int, Attributes>
-        {
-            { 0, new Attributes { Name = "Bolt-Action", Accuracy = 3, Damage = 3 } },
-            { 1, new Attributes { Name = "Pump-Action", Accuracy = -1, Damage = 2 } },
-            { 2, new Attributes { Name = "Semi-Auto", Accuracy = 1, Damage = 4 } },
-            { 3, new Attributes { Name = "Full-Auto", Accuracy = -2, Damage = 6} }
-        };
-        public Dictionary<int, Attributes> Gun_BodyType = new Dictionary<int, Attributes>
-        {
-            { 0, new Attributes { Name = "Pistol", NamePart = "Handi", Accuracy = -1 } },
-            { 1, new Attributes { Name = "Revolver", NamePart = "Revol", Accuracy = 2 } },
-            { 2, new Attributes { Name = "SMG", NamePart = "Subma", Accuracy = -2 } },
-            { 3, new Attributes { Name = "Rifle", NamePart = "Ri", Accuracy = 5} },
-            { 4, new Attributes { Name = "Shotgun", NamePart = "Shot", Accuracy = 3} },
-            { 5, new Attributes { Name = "Minigun", NamePart = "Mini", Accuracy = -5} },
-            { 6, new Attributes { Name = "RPG", NamePart = "Ro", Accuracy = 7 } }
-        };
-        public Dictionary<int, Attributes> Gun_BulletCaliber = new Dictionary<int, Attributes>
-        {
-            { 0, new Attributes { Name = "9mm bullets", NamePart = "nind", Damage = 2, Accuracy = 2} },
-            { 1, new Attributes { Name = ".45 ACP bullets", NamePart = "llet", Damage = 3, Accuracy = 1} },
-            { 2, new Attributes { Name = "7.62 x 39mm bullets", NamePart = "47", Damage = 4, Accuracy = 4} },
-            { 3, new Attributes { Name = "12 Gauge Birdshot shells", NamePart = "shot", Damage = 3, Accuracy = -2} },
-            { 4, new Attributes { Name = "12 Gauge Buckshot shells", NamePart = "uck", Damage = 5, Accuracy = -3} },
-            { 5, new Attributes { Name = "12 Gauge Slug shells", NamePart = "snail", Damage = 7, Accuracy = -5 } },
-            { 6, new Attributes { Name = ".50 BMG bullets", NamePart = "barr", Damage = 10, Accuracy = -2} }
-        };
-        public Dictionary<int, Attributes> Gun_ExplosiveType = new Dictionary<int, Attributes>
-        {
-            {0, new Attributes { Name = "Dynamite", NamePart = "nyte", Damage = 10, Accuracy = 10} },
-            {1, new Attributes { Name = "Frag Grenades", NamePart = "napple", Damage = 5, Accuracy = 7 } },
-            {2, new Attributes { Name = "Stun Grenades", NamePart = "nade", StunChance = 8, StunAmount = 2, Accuracy = 7 } },
-            {3, new Attributes { Name = "Smoke Grenades", NamePart = "dust", StunChance = 6, Accuracy = 10} },
-            {4, new Attributes { Name = "Impact Grenades", NamePart = "pack", Damage = 6, Accuracy = 4} },
-            {5, new Attributes { Name = "Random Fireworks", NamePart = "sparkle", Damage = 6} }
-        };
-        public Dictionary<int, Attributes> Gun_PrimitiveType = new Dictionary<int, Attributes>
-        {
-            {0, new Attributes { Name = "Rocks", NamePart = "stone", Damage = 2, StunChance = 3, StunAmount = 1, Accuracy = 7} },
-            {1, new Attributes { Name = "Crystals", NamePart = "shine", Damage = 6, StunChance = 1, StunAmount = 1, Accuracy = 6} },
-            {2, new Attributes { Name = "Wood", NamePart = "ode", Damage = 1, StunChance = 4, StunAmount = 1, Accuracy = 6} },
-            {3, new Attributes { Name = "Dirt", NamePart = "own", Damage = 0, StunChance = 6, StunAmount = 2, Accuracy = 4} }
-        };
-        public Dictionary<int, Attributes> Gun_SpecialType = new Dictionary<int, Attributes>
-        {
-            {0, new Attributes { Name = "Lasers", NamePart = "inator5000", Damage = 2, Accuracy = 10} },
-            {1, new Attributes { Name = "Cats", NamePart = "line", Damage = 6, Accuracy = 2, StunChance = 8, StunAmount = 1 } }
-        };
-        // --- Gun
 
-        // --- Sword
-        public Dictionary<int, Attributes> Sword_WeightType = new Dictionary<int, Attributes>
-        {
-            { 0, new Attributes { Name = "Light", Damage = -2, Accuracy = 3} },
-            { 1, new Attributes { Name = "Medium", Damage = 1, Accuracy = 1 } },
-            { 2, new Attributes { Name = "Heavy", Damage = 3, Accuracy = -2 } }
-        };
-        public Dictionary<int, Attributes> Sword_BladeType = new Dictionary<int, Attributes>
-        {
-            { 0, new Attributes { Name = "Stab", NamePart = "Stabi", Damage = -2, Accuracy = 4} },
-            { 1, new Attributes { Name = "Slice", NamePart = "Slici", Damage = 2, Accuracy = -2} }
-        };
-        public Dictionary<int, Attributes> Sword_BladeThickness = new Dictionary<int, Attributes>
-        {
-            { 0, new Attributes {Name = "Thin", NamePart = "xno", Damage = -2, Accuracy = 3} },
-            { 1, new Attributes {Name = "Normal", NamePart = "de", Accuracy = 1 } },
-            { 2, new Attributes {Name = "Thick", NamePart = "thi", Damage = 3, Accuracy = -2} }
-        };
-        public Dictionary<int, Attributes> Sword_BladeLength = new Dictionary<int, Attributes>
-        {
-            { 0, new Attributes { Name = "Short", Damage = 0, Accuracy = -2} },
-            { 1, new Attributes { Name = "Normal", Damage = 1} },
-            { 2, new Attributes { Name = "Long", Damage = 2, Accuracy = 1} }
-        };
-        public Dictionary<int, Attributes> Sword_HiltType = new Dictionary<int, Attributes>
-        {
-            { 0, new Attributes { Name = "Covered", Accuracy = 2 } },
-            { 1, new Attributes { Name = "Exposed", Damage = 2 } }
-        };
-        public Dictionary<int, Attributes> Sword_HiltSize = new Dictionary<int, Attributes>
-        {
-            { 0, new Attributes { Name = "One Handed", NamePart = "sin", Damage = -2, Accuracy = 3 } },
-            { 1, new Attributes { Name = "Two Handed", NamePart = "duo", Damage = 2, Accuracy = -2} },
-            { 2, new Attributes { Name = "Three Handed", NamePart = "tric", Damage = 4, Accuracy = -3 } }
-        };
-        public Dictionary<int, Attributes> Sword_HiltGrip = new Dictionary<int, Attributes>
-        {
-            { 0, new Attributes { Name = "None", Accuracy = -3, Damage = -2 } },
-            { 1, new Attributes { Name = "Bad", Accuracy = -1} },
-            { 2, new Attributes { Name = "Normal", Accuracy = 2} },
-            { 3, new Attributes { Name = "Great", Accuracy = 4, Damage = 2} }
-        };
-
-        // --- Sword
 
         // Random Room
         public DungeonRoom RoomGenerator(Coordinates coords, SaveData data)
@@ -985,8 +884,8 @@ namespace Mad_Bot_Discord
         public Gun GunGenerator()
         {
             // Selects a random value from the Gun_ProjectileType enum.
-            Array values = Enum.GetValues(typeof(Gun_ProjectileType));
-            Gun_ProjectileType randomProj = (Gun_ProjectileType)values.GetValue(r.Next(0, values.Length));
+            Array values = Enum.GetValues(typeof(DungeonWeaponParts.Gun_ProjectileType));
+            DungeonWeaponParts.Gun_ProjectileType randomProj = (DungeonWeaponParts.Gun_ProjectileType)values.GetValue(r.Next(0, values.Length));
 
 
             Attributes projectile = new Attributes();
@@ -994,32 +893,32 @@ namespace Mad_Bot_Discord
             // Selects different projectiles based on which enum was selected earlier.
             switch (randomProj)
             {
-                case Gun_ProjectileType.Bullet:
-                    int proj1 = r.Next(0, Gun_BulletCaliber.Count);
-                    projectile = Gun_BulletCaliber[proj1];
+                case DungeonWeaponParts.Gun_ProjectileType.Bullet:
+                    int proj1 = r.Next(0, DungeonWeaponParts.Gun_BulletCaliber.Count);
+                    projectile = DungeonWeaponParts.Gun_BulletCaliber[proj1];
                     break;
 
-                case Gun_ProjectileType.Explosive:
-                    int proj2 = r.Next(0, Gun_ExplosiveType.Count);
-                    projectile = Gun_ExplosiveType[proj2];
+                case DungeonWeaponParts.Gun_ProjectileType.Explosive:
+                    int proj2 = r.Next(0, DungeonWeaponParts.Gun_ExplosiveType.Count);
+                    projectile = DungeonWeaponParts.Gun_ExplosiveType[proj2];
                     break;
 
-                case Gun_ProjectileType.Primitive:
-                    int proj3 = r.Next(0, Gun_PrimitiveType.Count);
-                    projectile = Gun_PrimitiveType[proj3];
+                case DungeonWeaponParts.Gun_ProjectileType.Primitive:
+                    int proj3 = r.Next(0, DungeonWeaponParts.Gun_PrimitiveType.Count);
+                    projectile = DungeonWeaponParts.Gun_PrimitiveType[proj3];
                     break;
 
-                case Gun_ProjectileType.Special:
-                    int proj4 = r.Next(0, Gun_SpecialType.Count);
-                    projectile = Gun_SpecialType[proj4];
+                case DungeonWeaponParts.Gun_ProjectileType.Special:
+                    int proj4 = r.Next(0, DungeonWeaponParts.Gun_SpecialType.Count);
+                    projectile = DungeonWeaponParts.Gun_SpecialType[proj4];
                     break;
             }
 
             // Creates the gun.
             Gun rGun = new Gun
             {
-                FireType = Gun_FireType[r.Next(0, Gun_FireType.Count)],
-                BodyType = Gun_BodyType[r.Next(0, Gun_BodyType.Count)],
+                FireType = DungeonWeaponParts.Gun_FireType[r.Next(0, DungeonWeaponParts.Gun_FireType.Count)],
+                BodyType = DungeonWeaponParts.Gun_BodyType[r.Next(0, DungeonWeaponParts.Gun_BodyType.Count)],
                 ProjectileType = randomProj,
                 Projectile = projectile,
             };
@@ -1036,13 +935,13 @@ namespace Mad_Bot_Discord
             // Creates the sword. 
             Sword sword = new Sword
             {
-                BladeLength = Sword_BladeLength[r.Next(Sword_BladeLength.Count)],
-                BladeThickness = Sword_BladeThickness[r.Next(Sword_BladeThickness.Count)],
-                BladeType = Sword_BladeType[r.Next(Sword_BladeType.Count)],
-                HiltGrip = Sword_HiltGrip[r.Next(Sword_HiltGrip.Count)],
-                HiltSize = Sword_HiltSize[r.Next(Sword_HiltSize.Count)],
-                HiltType = Sword_HiltType[r.Next(Sword_HiltType.Count)],
-                WeightType = Sword_WeightType[r.Next(Sword_WeightType.Count)]
+                BladeLength = DungeonWeaponParts.Sword_BladeLength[r.Next(DungeonWeaponParts.Sword_BladeLength.Count)],
+                BladeThickness = DungeonWeaponParts.Sword_BladeThickness[r.Next(DungeonWeaponParts.Sword_BladeThickness.Count)],
+                BladeType = DungeonWeaponParts.Sword_BladeType[r.Next(DungeonWeaponParts.Sword_BladeType.Count)],
+                HiltGrip = DungeonWeaponParts.Sword_HiltGrip[r.Next(DungeonWeaponParts.Sword_HiltGrip.Count)],
+                HiltSize = DungeonWeaponParts.Sword_HiltSize[r.Next(DungeonWeaponParts.Sword_HiltSize.Count)],
+                HiltType = DungeonWeaponParts.Sword_HiltType[r.Next(DungeonWeaponParts.Sword_HiltType.Count)],
+                WeightType = DungeonWeaponParts.Sword_WeightType[r.Next(DungeonWeaponParts.Sword_WeightType.Count)]
             };
 
             return sword;
@@ -1051,22 +950,24 @@ namespace Mad_Bot_Discord
         // Randomly generates an enemy then return it.
         public Enemy EnemyGenerator()
         {
-            bool willStun = false;
-            if (r.Next(0, 3) == 0)
-                willStun = true;
 
             Enemy enemy = new Enemy()
             {
-                Accuracy = r.Next(7) + r.Next(-4, 6),
-                Damage = r.Next(15) + r.Next(-10, 11),
-                Health = r.Next(2,11),
-                StunAmount = r.Next(0, 4),
-                StunChance = 0,
+                Name = "Placeholder Man",
+                Health = r.Next(2,11), // Have this scale up with difficulty later.
                 StunLeft = 0,
-                Name = "Placeholder Man"
-            };
 
-            if (willStun) enemy.StunChance = r.Next(0, 8);
+                Stats = new Stats()
+                {
+                    AccuracyIncrease = r.Next(-10, 11),
+                    DamageIncrease = r.Next(-10, 16),
+                    CriticalChanceIncrease = r.Next(-10, 11),
+                    StunChanceIncrease = r.Next(-10, 11),
+                    StunAmountIncrease = r.Next(-10, 11)
+                },
+
+                
+            };
 
             return enemy;
         }
@@ -1074,240 +975,6 @@ namespace Mad_Bot_Discord
     public enum RoomType { Empty, Loot, Enemy, Boss };
 
     public enum Direction { Front, Back, Left, Right };
-    // Add staff and bow later.
-    public enum WeaponType { Sword, Gun, /*Staff, Bow*/
-    };
-
-    public class Gun
-    {
-        public string Name { get; set; } = "Gun";
-        public Attributes FireType { get; set; }
-        public Attributes BodyType { get; set; }
-        public Enum ProjectileType { get; set; }
-        public Attributes Projectile { get; set; }
-
-        public double Damage
-        {
-            get
-            {
-                if (Name != "Gun")
-                {
-                    double d = FireType.Damage + BodyType.Damage + Projectile.Damage;
-
-                    if (d <= 0) d = 1;
-
-                    return d;
-                }
-                else return 0;
-            }
-        }
-
-        public double Accuracy
-        {
-            get
-            {
-                if (Name != "Gun")
-                {
-                    double a = FireType.Accuracy + BodyType.Accuracy + Projectile.Accuracy;
-
-                    return a;
-                }
-                else return 0;
-            }
-        }
-
-        public double StunChance
-        {
-            get
-            {
-                if (Name != "Gun") return Projectile.StunChance;
-                else return 0;
-            }
-        }
-
-        public double StunAmount
-        {
-            get
-            {
-                if (Name != "Gun") return Projectile.StunAmount;
-                else return 0;
-            }
-        }
-    }
-
-    public class Sword
-    {
-        public string Name { get; set; } = "Sword";
-        public Attributes WeightType { get; set; } = null;
-        public Attributes BladeType { get; set; } = null;
-        public Attributes BladeThickness { get; set; } = null;
-        public Attributes BladeLength { get; set; } = null;
-        public Attributes HiltType { get; set; } = null;
-        public Attributes HiltGrip { get; set; } = null;
-        public Attributes HiltSize { get; set; } = null;
-
-        public double Damage {
-            get
-            {
 
 
-                if (Name != "Sword")
-                {
-                    double d = WeightType.Damage + BladeType.Damage + BladeThickness.Damage + BladeLength.Damage + HiltType
-                        .Damage + HiltGrip.Damage + HiltSize.Damage;
-
-                    if (d <= 0) d = 1;
-                        return d;
-                }
-                else return 0;
-            }
-        }
-
-        public double Accuracy
-        {
-            get
-            {
-                if (Name != "Sword")
-                    return WeightType.Accuracy + BladeType.Accuracy + BladeThickness.Accuracy + BladeLength.Accuracy + HiltType
-                        .Accuracy + HiltGrip.Accuracy + HiltSize.Accuracy;
-                else return 0;
-            }
-        }
-
-        public double StunAmount
-        {
-            get
-            {
-                if (Name != "Sword")
-                    return WeightType.StunAmount + BladeType.StunAmount + BladeThickness.StunAmount + BladeLength.StunAmount + HiltType.StunAmount
-                        + HiltGrip.StunAmount + HiltSize.StunAmount;
-                else return 0;
-            }
-        }
-
-        public double StunChance
-        {
-            get
-            {
-                if (Name != "Sword")
-                    return WeightType.StunChance + BladeType.StunChance + BladeThickness.StunChance + BladeLength.StunChance + HiltType.StunChance
-                        + HiltGrip.StunChance + HiltSize.StunChance;
-                else return 0;
-            }
-        }
-
-        
-        
-    }
-
-    public class Attributes
-    {
-        public string Name { get; set; } = null;
-        public string NamePart { get; set; } = null;
-        public double Damage { get; set; } = 0;
-        public int StunChance { get; set; } = 0;
-        public int StunAmount { get; set; } = 0;
-        public int Accuracy { get; set; } = 0;
-    }
-
-    public class Coordinates
-    {
-        internal static string CoordsToString(double X1, double Y1)
-        {
-            return X1.ToString() + "|" + Y1.ToString();
-        }
-
-        internal static string CoordsToString(Coordinates coords)
-        {
-            return coords.X.ToString() + "|" + coords.Y.ToString();
-        }
-
-        internal static Coordinates StringToCoords(string coords)
-        {
-            string[] splits = coords.Split('|');
-
-
-            if (!double.TryParse(splits[0], out double X1))
-                return null;
-
-            if (!double.TryParse(splits[1], out double Y1))
-                return null;
-
-            return new Coordinates { X = X1, Y = Y1 };
-        }
-
-        public double X { get; set; }
-        public double Y { get; set; }
-    }
-
-    public class DungeonRoom
-    {
-        public Coordinates Coordinates { get; set; }
-        public List<Direction> RoomDoors { get; set; }
-        public int RoomCount
-        {
-            get
-            {
-                return RoomDoors.Count;
-            }
-        }
-        public RoomType Type { get; set; }
-    }
-
-    public class Enemy
-    {
-        public string Name { get; set; } = "Enemy";
-        public double Health { get; set; } = 0;
-        public double Damage { get; set; } = 0;
-        public double Accuracy { get; set; } = 0;
-        public double StunChance { get; set; } = 0;
-        public int StunAmount { get; set; } = 0;
-
-        // Effects
-
-        public int StunLeft { get; set; } = 0;
-    }
-
-    public class Weapons
-    {
-        public List<Sword> Swords { get; set; }
-        public List<Gun> Guns { get; set; }
-    }
-
-    public class SaveData
-    {
-        public bool InGame { get; set; } = false;
-        public double Health { get; set; } = 100;
-        public UserAccount User { get; set; } = null;
-        public DungeonRoom CurrentRoom { get; set; } = null;
-        public Coordinates Coordinates {
-            get
-            {
-                if (CurrentRoom != null)
-                    return CurrentRoom.Coordinates;
-                else
-                    return new Coordinates { X = 0, Y = 0 };
-            }
-        }
-        public Dictionary<string, DungeonRoom> Rooms { get; set; } = null;
-        public Weapons Inventory { get; set; } = null;
-        public dynamic EquippedWeapon { get; set; } = null;
-        public bool InAFight { get; set; } = false;
-        public Enemy CurrentEnemy { get; set; } = null;
-
-        // Effects
-
-        public int StunLeft { get; set; } = 0;
-
-        // 0 = players turn -- 1 = enemy's turn
-        public int WhoseTurn { get; set; } = 0;
-    }
-
-    public class CanDirection
-    {
-        public bool CanLeft { get; set; } = false;
-        public bool CanRight { get; set; } = false;
-        public bool CanFront { get; set; } = false;
-        public bool CanBack { get; set; } = false;
-    }
 }

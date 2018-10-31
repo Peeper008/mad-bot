@@ -57,7 +57,7 @@ namespace Mad_Bot_Discord
                 }
             }
 
-            
+            /*
             //._. .-.
             if (!context.Message.HasStringPrefix(Config.bot.cmdPrefix, ref argPos, StringComparison.OrdinalIgnoreCase)
                 && !msg.HasMentionPrefix(_client.CurrentUser, ref argPos))
@@ -89,6 +89,7 @@ namespace Mad_Bot_Discord
                     }
                 }
             }
+            */
         }
     }
 }

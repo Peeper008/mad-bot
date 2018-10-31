@@ -197,9 +197,12 @@
     <Compile Include="Core\LevelingSystem\Leveling.cs" />
     <Compile Include="Core\UserAccounts\UserAccount.cs" />
     <Compile Include="Core\UserAccounts\UserAccounts.cs" />
-    <Compile Include="DungeonGame.cs" />
+    <Compile Include="Modules\DungeonGame\DungeonGame.cs" />
     <Compile Include="Global.cs" />
     <Compile Include="Modules\Battle.cs" />
+    <Compile Include="Modules\DungeonGame\DungeonClasses.cs" />
+    <Compile Include="Modules\DungeonGame\DungeonMethods.cs" />
+    <Compile Include="Modules\DungeonGame\DungeonWeaponParts.cs" />
     <Compile Include="Modules\Fun.cs" />
     <Compile Include="Modules\Gungeon.cs" />
     <Compile Include="Modules\Management.cs" />
@@ -218,10 +221,6 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="SystemLang\8ballAnswers.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="SystemLang\alerts.json">
-      <SubType>Component</SubType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="SystemLang\attacks.json">

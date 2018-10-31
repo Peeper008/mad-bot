@@ -1,1 +1,19 @@
-﻿[]
+﻿// {0} = Ends with es or not
+// {1} = Ends with s or not
+// {2} = Player/Enemy
+// {3} = Victim
+// {4} = Weapon
+
+[
+  "{2} dropkick{1} {3} to the floor and hit{1} {3} with {4}!",
+  "{2} punch{0} {3} in the face then throw{1} {4} at {3} while they are down!",
+  "{2} smack{1} {3} in the face with {4}!",
+  "{2} stab{1} {3} in the stomach with {4}!",
+  "{2} throw{1} {4} at {3} then stab{1} {3} with {4}!",
+  "{2} sweep{1} {3}'s legs out from under {3} then slice{1} {3} with {4}!",
+  "{2} throw{1} {4} at {3}'s face then stab{1} {3} with {4}!",
+  "{2} shoot{1} {3}'s face with {4}!",
+  "{2} explode{1} {3} with {4}!",
+  "{2} wallop{1} {3} with {4}. WHAM! POW! BONK!",
+  "{2} throw{1} {4} at {3}!"
+]

@@ -1,6 +1,0 @@
-{
-  "TEST": "Hello World!",
-  "ECHO_&NAME": "Message by {0}",
-  "PICK_&NAME": "Choice for {0}",
-  "SECRET": "The secret is `123ABC`."
-}
